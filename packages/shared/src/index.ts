@@ -1,0 +1,206 @@
+// ─── Platforms ───────────────────────────────────────────────
+
+export type AIPlatform = 'openai' | 'anthropic' | 'google' | 'perplexity';
+export type Sentiment = 'positive' | 'neutral' | 'negative';
+
+// ─── Records ────────────────────────────────────────────────
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+}
+
+export interface ProjectRecord {
+  id: string;
+  user_id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Competitor {
+  name: string;
+  url?: string;
+}
+
+export interface BrandConfigRecord {
+  id: string;
+  project_id: string;
+  brand_name: string;
+  brand_aliases: string[];
+  brand_url: string | null;
+  competitors: Competitor[];
+  platforms: AIPlatform[];
+  has_openai_key: boolean;
+  has_anthropic_key: boolean;
+  has_google_key: boolean;
+  has_perplexity_key: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromptRecord {
+  id: string;
+  project_id: string;
+  prompt_text: string;
+  category: string | null;
+  created_at: string;
+}
+
+export interface CheckRecord {
+  id: string;
+  project_id: string;
+  status: 'running' | 'completed' | 'failed';
+  total_queries: number;
+  completed_queries: number;
+  brand_mention_rate: number | null;
+  summary: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface CompetitorResult {
+  name: string;
+  mentioned: boolean;
+  position: number | null;
+}
+
+export interface ResultRecord {
+  id: string;
+  check_id: string;
+  project_id: string;
+  prompt_id: string;
+  platform: AIPlatform;
+  model: string;
+  response_text: string;
+  brand_mentioned: boolean;
+  brand_sentiment: Sentiment | null;
+  brand_position: number | null;
+  competitors_mentioned: CompetitorResult[];
+  citations: string[];
+  brand_cited: boolean;
+  latency_ms: number | null;
+  created_at: string;
+}
+
+// ─── API Requests ───────────────────────────────────────────
+
+export interface CreateBrandConfigRequest {
+  brand_name: string;
+  brand_aliases?: string[];
+  brand_url?: string;
+  competitors?: Competitor[];
+  platforms?: AIPlatform[];
+  openai_api_key?: string;
+  anthropic_api_key?: string;
+  google_api_key?: string;
+  perplexity_api_key?: string;
+}
+
+export interface UpdateBrandConfigRequest extends Partial<CreateBrandConfigRequest> {}
+
+export interface CreatePromptRequest {
+  prompt_text: string;
+  category?: string;
+}
+
+export interface CreateProjectRequest {
+  name: string;
+}
+
+// ─── Dashboard Aggregate ────────────────────────────────────
+
+export interface DashboardData {
+  config: BrandConfigRecord | null;
+  prompts: PromptRecord[];
+  recent_checks: CheckRecord[];
+  latest_results: ResultRecord[];
+}
+
+// ─── Free Check ────────────────────────────────────────────
+
+export interface FreeCheckResult {
+  prompt: string;
+  platform: string;
+  model: string;
+  brand_mentioned: boolean;
+  brand_sentiment: string | null;
+  brand_position: number | null;
+  brand_cited: boolean;
+  response_preview: string;
+  latency_ms: number | null;
+}
+
+export interface FreeCheckRecord {
+  id: string;
+  domain: string;
+  brand_name: string | null;
+  status: 'running' | 'completed' | 'failed';
+  mention_rate: number | null;
+  results: FreeCheckResult[];
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface FreeCheckRequest {
+  domain: string;
+}
+
+// ─── GEO Tools ─────────────────────────────────────────────
+
+export interface GEOScore {
+  overall: number;
+  authority: number;
+  readability: number;
+  structure: number;
+  recommendations: string[];
+}
+
+export interface CrawlabilityBot {
+  name: string;
+  user_agent: string;
+  allowed: boolean;
+  blocked_by: string | null;
+}
+
+export interface CrawlabilityResult {
+  overall_accessible: boolean;
+  bots: CrawlabilityBot[];
+  robots_txt_found: boolean;
+  robots_txt_content: string | null;
+  llms_txt_found: boolean;
+  recommendations: string[];
+}
+
+export interface SchemaAnalysis {
+  found: { type: string; count: number }[];
+  missing: { type: string; importance: string; description: string }[];
+  total_schemas: number;
+  recommendations: string[];
+}
+
+export interface LlmsTxtResult {
+  content: string;
+  sections: string[];
+}
+
+// ─── HN Monitoring ─────────────────────────────────────────
+
+export interface HNMention {
+  id: string;
+  title: string | null;
+  url: string | null;
+  author: string;
+  text: string | null;
+  story_title: string | null;
+  story_url: string | null;
+  points: number | null;
+  num_comments: number | null;
+  type: 'story' | 'comment';
+  created_at: string;
+  hn_url: string;
+}
