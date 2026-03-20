@@ -89,6 +89,7 @@ export default function Home() {
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#tools" className="text-muted-foreground hover:text-foreground transition-colors">Free Tools</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+            <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login">

@@ -1,4 +1,5 @@
 .vercel
+.velite
 playwright-report
 test-results
 out
