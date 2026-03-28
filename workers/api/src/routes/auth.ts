@@ -5,19 +5,34 @@ import { requireSession } from '../middleware/auth';
 
 const auth = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
+async function verifyGoogleIdToken(idToken: string): Promise<{ email: string; name: string | null; picture: string | null } | null> {
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!res.ok) return null;
+    const payload = await res.json() as Record<string, string>;
+    if (!payload.email || payload.email_verified !== 'true') return null;
+    return { email: payload.email, name: payload.name || null, picture: payload.picture || null };
+  } catch {
+    return null;
+  }
+}
+
 // POST /callback — called by frontend after Google OAuth, creates session
 auth.post('/callback', async (c) => {
-  const body = await c.req.json() as { email: string; name: string | null; avatar_url: string | null };
-  if (!body.email) return c.json({ error: 'email is required' }, 400);
+  const body = await c.req.json() as { id_token: string; email?: string; name?: string | null; avatar_url?: string | null };
+  if (!body.id_token) return c.json({ error: 'id_token is required' }, 400);
+
+  const verified = await verifyGoogleIdToken(body.id_token);
+  if (!verified) return c.json({ error: 'Invalid or expired Google ID token' }, 401);
 
   const db = getDb(c.env.DB);
 
   const userId = crypto.randomUUID();
   const user = await db.upsertUser({
     id: userId,
-    email: body.email,
-    name: body.name || null,
-    avatar_url: body.avatar_url || null,
+    email: verified.email,
+    name: verified.name || body.name || null,
+    avatar_url: verified.picture || body.avatar_url || null,
   });
 
   const token = crypto.randomUUID();

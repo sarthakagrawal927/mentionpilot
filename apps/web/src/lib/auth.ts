@@ -11,15 +11,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       if (!user.email) return false;
+      if (!account?.id_token) return false;
 
       try {
         const res = await fetch(`${API_BASE}/v1/auth/callback`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: user.email,
+            id_token: account.id_token,
             name: user.name || null,
             avatar_url: user.image || null,
           }),
