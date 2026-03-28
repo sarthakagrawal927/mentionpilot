@@ -5,20 +5,8 @@ import { Loader2, TrendingUp, Award, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-const DEMO_TOKEN = "";
-
-async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 
 interface VisibilityScore {
   score: number;
@@ -34,26 +22,27 @@ interface SuggestedPrompt {
 }
 
 export default function DashboardPage() {
-  const [projectId] = useState("demo");
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<VisibilityScore | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedPrompt[]>([]);
 
   const load = useCallback(async () => {
+    if (!projectId) return;
     try {
       const [s, p] = await Promise.allSettled([
-        api<VisibilityScore>(`/v1/analytics/${projectId}/visibility-score`),
-        api<{ suggestions: SuggestedPrompt[] }>(`/v1/analytics/${projectId}/discover-prompts`),
+        apiFetch<VisibilityScore>(`/v1/analytics/${projectId}/visibility-score`),
+        apiFetch<{ suggestions: SuggestedPrompt[] }>(`/v1/analytics/${projectId}/discover-prompts`),
       ]);
       if (s.status === 'fulfilled') setScore(s.value);
       if (p.status === 'fulfilled') setSuggestions(p.value.suggestions);
-    } catch { /* Error */ }
+    } catch { /* handled by allSettled */ }
     finally { setLoading(false); }
   }, [projectId]);
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return (
+  if (projectLoading || loading) return (
     <div className="flex items-center justify-center py-12">
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     </div>

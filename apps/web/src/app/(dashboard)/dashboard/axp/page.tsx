@@ -36,21 +36,8 @@ import { Separator } from "@/components/ui/separator";
 // Config
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-const DEMO_TOKEN = "";
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers as Record<string, string>),
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,7 +94,7 @@ interface AXPAnalytics {
 // ---------------------------------------------------------------------------
 
 export default function AXPPage() {
-  const [projectId] = useState("demo");
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
 
   // Config
@@ -153,8 +140,9 @@ export default function AXPPage() {
   // ---------------------------------------------------------------------------
 
   const loadConfig = useCallback(async () => {
+    if (!projectId) return;
     try {
-      const cfg = await api<AXPConfig>(
+      const cfg = await apiFetch<AXPConfig>(
         `/v1/axp/${projectId}/config`
       );
       setOriginUrl(cfg.origin_url || "");
@@ -167,7 +155,7 @@ export default function AXPPage() {
 
   const loadStats = useCallback(async () => {
     try {
-      const s = await api<AXPStats>(`/v1/axp/${projectId}/stats`);
+      const s = await apiFetch<AXPStats>(`/v1/axp/${projectId}/stats`);
       setStats(s);
     } catch {
       // No stats yet
@@ -176,7 +164,7 @@ export default function AXPPage() {
 
   const loadPages = useCallback(async () => {
     try {
-      const data = await api<{ pages: AXPPage[] }>(
+      const data = await apiFetch<{ pages: AXPPage[] }>(
         `/v1/axp/${projectId}/pages`
       );
       setPages(data.pages || []);
@@ -203,7 +191,7 @@ export default function AXPPage() {
     async (type: "cloudflare" | "vercel") => {
       setLoadingMiddleware(true);
       try {
-        const data = await api<{ code: string }>(
+        const data = await apiFetch<{ code: string }>(
           `/v1/axp/${projectId}/middleware-code?type=${type}`
         );
         setMiddlewareCode(data.code || "");
@@ -228,7 +216,7 @@ export default function AXPPage() {
     async (range: string) => {
       setLoadingAnalytics(true);
       try {
-        const data = await api<AXPAnalytics>(
+        const data = await apiFetch<AXPAnalytics>(
           `/v1/axp/${projectId}/analytics?range=${range}`
         );
         setAnalytics(data);
@@ -252,7 +240,7 @@ export default function AXPPage() {
   const saveConfig = async () => {
     setSavingConfig(true);
     try {
-      const result = await api<AXPConfig>(
+      const result = await apiFetch<AXPConfig>(
         `/v1/axp/${projectId}/config`,
         {
           method: "POST",
@@ -274,7 +262,7 @@ export default function AXPPage() {
     setCrawling(true);
     setCrawlStatus("Crawling...");
     try {
-      const data = await api<{ status: string; pages_found?: number }>(
+      const data = await apiFetch<{ status: string; pages_found?: number }>(
         `/v1/axp/${projectId}/crawl`,
         {
           method: "POST",
@@ -304,7 +292,7 @@ export default function AXPPage() {
     const existing = pages.find((p) => p.id === pageId);
     if (existing && !existing.optimized_content) {
       try {
-        const full = await api<AXPPage>(
+        const full = await apiFetch<AXPPage>(
           `/v1/axp/${projectId}/pages/${pageId}`
         );
         setPages((prev) =>
@@ -325,7 +313,7 @@ export default function AXPPage() {
   const savePageContent = async (pageId: string) => {
     setSavingPage(true);
     try {
-      const updated = await api<AXPPage>(
+      const updated = await apiFetch<AXPPage>(
         `/v1/axp/${projectId}/pages/${pageId}`,
         {
           method: "PUT",
@@ -345,7 +333,7 @@ export default function AXPPage() {
 
   const deletePage = async (pageId: string) => {
     try {
-      await api(`/v1/axp/${projectId}/pages/${pageId}`, {
+      await apiFetch(`/v1/axp/${projectId}/pages/${pageId}`, {
         method: "DELETE",
       });
       setPages((prev) => prev.filter((p) => p.id !== pageId));
@@ -365,7 +353,7 @@ export default function AXPPage() {
   // Render
   // ---------------------------------------------------------------------------
 
-  if (loading) {
+  if (projectLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

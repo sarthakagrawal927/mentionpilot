@@ -11,20 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-const DEMO_TOKEN = "";
-
-async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 
 type Source = "all" | "hackernews" | "reddit" | "producthunt";
 
@@ -72,7 +60,7 @@ const SOURCE_CONFIG: Record<
 };
 
 export default function SocialPage() {
-  const [projectId] = useState("demo");
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
   const [feedData, setFeedData] = useState<FeedResponse | null>(null);
   const [competitorData, setCompetitorData] = useState<
@@ -82,11 +70,12 @@ export default function SocialPage() {
   const [activeSource, setActiveSource] = useState<Source>("all");
 
   const load = useCallback(async () => {
+    if (!projectId) return;
     setLoading(true);
     try {
       const [feed, comp] = await Promise.all([
-        api<FeedResponse>(`/v1/social/${projectId}/feed?days=${days}`),
-        api<{ competitors: Record<string, { mentions: number }> }>(
+        apiFetch<FeedResponse>(`/v1/social/${projectId}/feed?days=${days}`),
+        apiFetch<{ competitors: Record<string, { mentions: number }> }>(
           `/v1/social/${projectId}/hn/competitors?days=${days}`
         ),
       ]);
@@ -133,7 +122,7 @@ export default function SocialPage() {
         ))}
       </div>
 
-      {loading ? (
+      {projectLoading || loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>

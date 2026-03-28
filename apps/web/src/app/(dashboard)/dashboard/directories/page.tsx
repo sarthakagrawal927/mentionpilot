@@ -27,21 +27,8 @@ import { Separator } from "@/components/ui/separator";
 // Config
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-const DEMO_TOKEN = "";
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers as Record<string, string>),
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -134,7 +121,7 @@ const STATUS_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function DirectoriesPage() {
-  const [projectId] = useState("demo");
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
 
   // Data
@@ -169,13 +156,14 @@ export default function DirectoriesPage() {
   // ---------------------------------------------------------------------------
 
   const loadAll = useCallback(async () => {
+    if (!projectId) return;
     setLoading(true);
     try {
       const [statusRes, autoFillRes] = await Promise.allSettled([
-        api<{ directories: DirectoryEntry[]; stats: Stats; total: number }>(
+        apiFetch<{ directories: DirectoryEntry[]; stats: Stats; total: number }>(
           `/v1/directories/${projectId}/status`
         ),
-        api<AutoFillData>(`/v1/directories/${projectId}/auto-fill`),
+        apiFetch<AutoFillData>(`/v1/directories/${projectId}/auto-fill`),
       ]);
 
       if (statusRes.status === "fulfilled") {
@@ -232,7 +220,7 @@ export default function DirectoriesPage() {
     setSavingSlug(slug);
     try {
       const existing = directories.find((d) => d.slug === slug);
-      await api(`/v1/directories/${projectId}/submit`, {
+      await apiFetch(`/v1/directories/${projectId}/submit`, {
         method: "POST",
         body: JSON.stringify({
           directory_slug: slug,
@@ -294,7 +282,7 @@ export default function DirectoriesPage() {
     setSavingSlug(slug);
     try {
       const existing = directories.find((d) => d.slug === slug);
-      await api(`/v1/directories/${projectId}/submit`, {
+      await apiFetch(`/v1/directories/${projectId}/submit`, {
         method: "POST",
         body: JSON.stringify({
           directory_slug: slug,
@@ -350,7 +338,7 @@ export default function DirectoriesPage() {
   // Render
   // ---------------------------------------------------------------------------
 
-  if (loading) {
+  if (projectLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

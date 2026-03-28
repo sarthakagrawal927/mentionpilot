@@ -25,6 +25,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 import type {
   BrandConfigRecord,
   PromptRecord,
@@ -33,26 +35,9 @@ import type {
   DashboardData,
 } from "@mentionpilot/shared";
 
-// TODO: Replace with real auth token from session
-const DEMO_TOKEN = "";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers as Record<string, string>),
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
-
 export default function MentionsPage() {
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
-  const [projectId] = useState("demo"); // TODO: from route/context
   const [config, setConfig] = useState<BrandConfigRecord | null>(null);
   const [prompts, setPrompts] = useState<PromptRecord[]>([]);
   const [checks, setChecks] = useState<CheckRecord[]>([]);
@@ -80,8 +65,9 @@ export default function MentionsPage() {
   const [pollingCheck, setPollingCheck] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
+    if (!projectId) return;
     try {
-      const data = await api<DashboardData>(
+      const data = await apiFetch<DashboardData>(
         `/v1/checks/${projectId}/dashboard`
       );
       setConfig(data.config);
@@ -113,7 +99,7 @@ export default function MentionsPage() {
     if (!pollingCheck) return;
     const interval = setInterval(async () => {
       try {
-        const check = await api<
+        const check = await apiFetch<
           CheckRecord & { results: ResultRecord[] }
         >(`/v1/checks/${projectId}/${pollingCheck}`);
         if (check.status !== "running") {
@@ -150,7 +136,7 @@ export default function MentionsPage() {
       if (googleKey) payload.google_api_key = googleKey;
       if (perplexityKey) payload.perplexity_api_key = perplexityKey;
 
-      const updated = await api<BrandConfigRecord>(
+      const updated = await apiFetch<BrandConfigRecord>(
         `/v1/brands/${projectId}/config`,
         { method: "POST", body: JSON.stringify(payload) }
       );
@@ -170,7 +156,7 @@ export default function MentionsPage() {
     if (!newPrompt.trim()) return;
     setAddingPrompt(true);
     try {
-      const prompt = await api<PromptRecord>(
+      const prompt = await apiFetch<PromptRecord>(
         `/v1/prompts/${projectId}`,
         {
           method: "POST",
@@ -192,7 +178,7 @@ export default function MentionsPage() {
 
   const deletePrompt = async (id: string) => {
     try {
-      await api(`/v1/prompts/${projectId}/${id}`, { method: "DELETE" });
+      await apiFetch(`/v1/prompts/${projectId}/${id}`, { method: "DELETE" });
       setPrompts((prev) => prev.filter((p) => p.id !== id));
     } catch {
       // Error
@@ -202,7 +188,7 @@ export default function MentionsPage() {
   const runCheck = async () => {
     setRunningCheck(true);
     try {
-      const check = await api<CheckRecord>(
+      const check = await apiFetch<CheckRecord>(
         `/v1/checks/${projectId}`,
         { method: "POST" }
       );
@@ -215,7 +201,7 @@ export default function MentionsPage() {
 
   const viewCheck = async (checkId: string) => {
     try {
-      const check = await api<
+      const check = await apiFetch<
         CheckRecord & { results: ResultRecord[] }
       >(`/v1/checks/${projectId}/${checkId}`);
       setLatestResults(check.results);
@@ -224,7 +210,7 @@ export default function MentionsPage() {
     }
   };
 
-  if (loading) {
+  if (projectLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

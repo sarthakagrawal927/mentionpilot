@@ -15,6 +15,7 @@ import { teams } from './routes/teams';
 import { reports } from './routes/reports';
 import { axp } from './routes/axp';
 import { directories } from './routes/directories';
+import { projects } from './routes/projects';
 import { getDb } from './db';
 import { runMentionCheck } from './lib/ai-engine';
 import type { Platform } from './lib/ai-engine';
@@ -56,6 +57,7 @@ app.route('/v1/teams', teams);
 app.route('/v1/reports', reports);
 app.route('/v1/axp', axp);
 app.route('/v1/directories', directories);
+app.route('/v1/projects', projects);
 
 export default {
   fetch: app.fetch,

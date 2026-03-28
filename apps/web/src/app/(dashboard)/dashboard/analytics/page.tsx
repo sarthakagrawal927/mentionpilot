@@ -4,20 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, TrendingUp, Users, BarChart3, Link2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
-const DEMO_TOKEN = "";
-
-async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(DEMO_TOKEN ? { Authorization: `Bearer ${DEMO_TOKEN}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
-}
+import { apiFetch } from "@/lib/api-client";
+import { useProject } from "@/lib/use-project";
 
 function Bar({
   value,
@@ -76,7 +64,7 @@ interface CitationEntry {
 }
 
 export default function AnalyticsPage() {
-  const [projectId] = useState("demo"); // TODO: from route/context
+  const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
   const [trends, setTrends] = useState<TrendCheck[]>([]);
   const [sov, setSov] = useState<ShareOfVoice | null>(null);
@@ -89,21 +77,22 @@ export default function AnalyticsPage() {
   const [citations, setCitations] = useState<CitationEntry[]>([]);
 
   const load = useCallback(async () => {
+    if (!projectId) return;
     try {
       const [t, s, p, se, ci] = await Promise.all([
-        api<{ checks: TrendCheck[] }>(
+        apiFetch<{ checks: TrendCheck[] }>(
           `/v1/analytics/${projectId}/trends`
         ),
-        api<ShareOfVoice>(
+        apiFetch<ShareOfVoice>(
           `/v1/analytics/${projectId}/share-of-voice`
         ),
-        api<{ platforms: Record<string, number> }>(
+        apiFetch<{ platforms: Record<string, number> }>(
           `/v1/analytics/${projectId}/platform-breakdown`
         ),
-        api<SentimentData>(
+        apiFetch<SentimentData>(
           `/v1/analytics/${projectId}/sentiment-breakdown`
         ),
-        api<{ citations: CitationEntry[] }>(
+        apiFetch<{ citations: CitationEntry[] }>(
           `/v1/analytics/${projectId}/citations`
         ),
       ]);
@@ -123,7 +112,7 @@ export default function AnalyticsPage() {
     load();
   }, [load]);
 
-  if (loading)
+  if (projectLoading || loading)
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
