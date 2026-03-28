@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<VisibilityScore | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedPrompt[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -36,7 +37,7 @@ export default function DashboardPage() {
       ]);
       if (s.status === 'fulfilled') setScore(s.value);
       if (p.status === 'fulfilled') setSuggestions(p.value.suggestions);
-    } catch { /* handled by allSettled */ }
+    } catch (err) { setError((err as Error).message); }
     finally { setLoading(false); }
   }, [projectId]);
 
@@ -56,6 +57,12 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">Your AI visibility at a glance.</p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Visibility Score */}
       {score && (

@@ -96,6 +96,7 @@ interface AXPAnalytics {
 export default function AXPPage() {
   const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Config
   const [originUrl, setOriginUrl] = useState("");
@@ -148,8 +149,8 @@ export default function AXPPage() {
       setOriginUrl(cfg.origin_url || "");
       setDeployType(cfg.deploy_type || "cloudflare");
       setDeployKey(cfg.deploy_key || null);
-    } catch {
-      // No config yet
+    } catch (err) {
+      setError((err as Error).message);
     }
   }, [projectId]);
 
@@ -157,8 +158,8 @@ export default function AXPPage() {
     try {
       const s = await apiFetch<AXPStats>(`/v1/axp/${projectId}/stats`);
       setStats(s);
-    } catch {
-      // No stats yet
+    } catch (err) {
+      setError((err as Error).message);
     }
   }, [projectId]);
 
@@ -168,8 +169,8 @@ export default function AXPPage() {
         `/v1/axp/${projectId}/pages`
       );
       setPages(data.pages || []);
-    } catch {
-      // No pages yet
+    } catch (err) {
+      setError((err as Error).message);
     }
   }, [projectId]);
 
@@ -251,8 +252,8 @@ export default function AXPPage() {
         }
       );
       setDeployKey(result.deploy_key || null);
-    } catch {
-      // Error saving
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSavingConfig(false);
     }
@@ -298,8 +299,8 @@ export default function AXPPage() {
         setPages((prev) =>
           prev.map((p) => (p.id === pageId ? { ...p, ...full } : p))
         );
-      } catch {
-        // Failed to load content
+      } catch (err) {
+        setError((err as Error).message);
       }
     }
   };
@@ -324,8 +325,8 @@ export default function AXPPage() {
         prev.map((p) => (p.id === pageId ? { ...p, ...updated } : p))
       );
       setEditingPage(null);
-    } catch {
-      // Error saving
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSavingPage(false);
     }
@@ -338,8 +339,8 @@ export default function AXPPage() {
       });
       setPages((prev) => prev.filter((p) => p.id !== pageId));
       if (expandedPage === pageId) setExpandedPage(null);
-    } catch {
-      // Error deleting
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 
@@ -375,6 +376,12 @@ export default function AXPPage() {
           usage and improve how AI agents understand your pages.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* ----------------------------------------------------------------- */}
       {/* 1. Setup Card                                                     */}

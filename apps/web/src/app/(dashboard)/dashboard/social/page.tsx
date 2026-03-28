@@ -68,6 +68,7 @@ export default function SocialPage() {
   >({});
   const [days, setDays] = useState(30);
   const [activeSource, setActiveSource] = useState<Source>("all");
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -81,8 +82,8 @@ export default function SocialPage() {
       ]);
       setFeedData(feed);
       setCompetitorData(comp.competitors);
-    } catch {
-      // Error
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -107,6 +108,12 @@ export default function SocialPage() {
           Track brand mentions across Hacker News, Reddit, and Product Hunt.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Time filter */}
       <div className="flex gap-2">

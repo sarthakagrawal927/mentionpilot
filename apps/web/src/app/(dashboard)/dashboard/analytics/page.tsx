@@ -75,6 +75,7 @@ export default function AnalyticsPage() {
     negative: 0,
   });
   const [citations, setCitations] = useState<CitationEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -101,8 +102,8 @@ export default function AnalyticsPage() {
       setPlatforms(p.platforms);
       setSentiment(se);
       setCitations(ci.citations);
-    } catch {
-      // Error loading analytics
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -130,6 +131,12 @@ export default function AnalyticsPage() {
           AI visibility trends and competitive intelligence.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Trend */}
       <Card>

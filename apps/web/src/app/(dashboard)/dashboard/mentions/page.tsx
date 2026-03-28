@@ -38,6 +38,7 @@ import type {
 export default function MentionsPage() {
   const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<BrandConfigRecord | null>(null);
   const [prompts, setPrompts] = useState<PromptRecord[]>([]);
   const [checks, setChecks] = useState<CheckRecord[]>([]);
@@ -83,8 +84,8 @@ export default function MentionsPage() {
           data.config.competitors.map((c) => c.name).join(", ")
         );
       }
-    } catch {
-      // Loading failed — likely no auth yet
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -145,8 +146,8 @@ export default function MentionsPage() {
       setAnthropicKey("");
       setGoogleKey("");
       setPerplexityKey("");
-    } catch {
-      // Error
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSaving(false);
     }
@@ -169,8 +170,8 @@ export default function MentionsPage() {
       setPrompts((prev) => [...prev, prompt]);
       setNewPrompt("");
       setPromptCategory("");
-    } catch {
-      // Error
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setAddingPrompt(false);
     }
@@ -180,8 +181,8 @@ export default function MentionsPage() {
     try {
       await apiFetch(`/v1/prompts/${projectId}/${id}`, { method: "DELETE" });
       setPrompts((prev) => prev.filter((p) => p.id !== id));
-    } catch {
-      // Error
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 
@@ -205,8 +206,8 @@ export default function MentionsPage() {
         CheckRecord & { results: ResultRecord[] }
       >(`/v1/checks/${projectId}/${checkId}`);
       setLatestResults(check.results);
-    } catch {
-      // Error
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 
@@ -229,6 +230,12 @@ export default function MentionsPage() {
           questions.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Config */}
       <Card>

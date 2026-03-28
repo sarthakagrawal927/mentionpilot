@@ -123,6 +123,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DirectoriesPage() {
   const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Data
   const [directories, setDirectories] = useState<DirectoryEntry[]>([]);
@@ -177,8 +178,8 @@ export default function DirectoriesPage() {
       } else {
         setAutoFillError("Configure your brand first to auto-fill submission data.");
       }
-    } catch {
-      // Error loading
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -271,8 +272,8 @@ export default function DirectoriesPage() {
         }
         return newStats;
       });
-    } catch {
-      // Error updating
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSavingSlug(null);
     }
@@ -310,8 +311,8 @@ export default function DirectoriesPage() {
       );
 
       setExpandedSlug(null);
-    } catch {
-      // Error saving
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSavingSlug(null);
     }
@@ -359,6 +360,12 @@ export default function DirectoriesPage() {
           and auto-fill submission forms.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Stats bar */}
       <div className="grid gap-4 sm:grid-cols-5">
