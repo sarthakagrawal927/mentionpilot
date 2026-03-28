@@ -3,8 +3,21 @@ import type { Bindings, Variables } from '../types';
 import { analyzeGEOScore, checkCrawlability, analyzeSchema, generateLlmsTxt } from '../lib/geo-tools';
 import { crawlSite } from '../lib/site-crawler';
 import { validatePublicUrl } from '../lib/url-validator';
+import { rateLimit } from '../lib/rate-limiter';
 
 const geo = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+const GEO_RATE_LIMIT = 10;       // requests
+const GEO_RATE_WINDOW = 60_000;  // per minute
+
+// Rate limit middleware for all GEO endpoints
+geo.use('*', async (c, next) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
+  if (!rateLimit(`geo:${ip}`, GEO_RATE_LIMIT, GEO_RATE_WINDOW)) {
+    return c.json({ error: 'Rate limit exceeded. Max 10 requests per minute.' }, 429);
+  }
+  await next();
+});
 
 // POST /geo-score — public, no auth
 geo.post('/geo-score', async (c) => {
