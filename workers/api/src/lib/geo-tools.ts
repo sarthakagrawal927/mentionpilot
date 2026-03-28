@@ -173,8 +173,10 @@ function parseRobotsTxt(robotsTxt: string, userAgent: string): boolean {
   return !globalDisallowed;
 }
 
+import { validatePublicUrl } from './url-validator';
+
 export async function checkCrawlability(url: string): Promise<CrawlabilityResult> {
-  if (!url.startsWith('http')) url = `https://${url}`;
+  url = validatePublicUrl(url);
   const origin = new URL(url).origin;
   const recommendations: string[] = [];
 

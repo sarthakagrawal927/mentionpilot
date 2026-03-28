@@ -6,9 +6,10 @@ export interface SiteInfo {
   competitors_mentioned: string[];
 }
 
+import { validatePublicUrl } from './url-validator';
+
 export async function crawlSite(url: string): Promise<SiteInfo> {
-  // Normalize URL
-  if (!url.startsWith('http')) url = `https://${url}`;
+  url = validatePublicUrl(url);
 
   const res = await fetch(url, {
     headers: { 'User-Agent': 'MentionPilot/1.0 (AI Visibility Check)' },

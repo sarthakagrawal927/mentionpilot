@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { analyzeGEOScore, checkCrawlability, analyzeSchema, generateLlmsTxt } from '../lib/geo-tools';
 import { crawlSite } from '../lib/site-crawler';
+import { validatePublicUrl } from '../lib/url-validator';
 
 const geo = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -10,8 +11,12 @@ geo.post('/geo-score', async (c) => {
   const body = (await c.req.json()) as { url: string };
   if (!body.url?.trim()) return c.json({ error: 'url is required' }, 400);
 
-  let url = body.url.trim();
-  if (!url.startsWith('http')) url = `https://${url}`;
+  let url: string;
+  try {
+    url = validatePublicUrl(body.url.trim());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 400);
+  }
 
   try {
     const res = await fetch(url, {
@@ -32,8 +37,15 @@ geo.post('/crawlability', async (c) => {
   const body = (await c.req.json()) as { url: string };
   if (!body.url?.trim()) return c.json({ error: 'url is required' }, 400);
 
+  let validatedUrl: string;
   try {
-    const result = await checkCrawlability(body.url.trim());
+    validatedUrl = validatePublicUrl(body.url.trim());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 400);
+  }
+
+  try {
+    const result = await checkCrawlability(validatedUrl);
     return c.json(result);
   } catch (err) {
     return c.json({ error: `Could not check ${body.url}: ${(err as Error).message}` }, 400);
@@ -45,8 +57,12 @@ geo.post('/schema', async (c) => {
   const body = (await c.req.json()) as { url: string };
   if (!body.url?.trim()) return c.json({ error: 'url is required' }, 400);
 
-  let url = body.url.trim();
-  if (!url.startsWith('http')) url = `https://${url}`;
+  let url: string;
+  try {
+    url = validatePublicUrl(body.url.trim());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 400);
+  }
 
   try {
     const res = await fetch(url, {
@@ -67,11 +83,18 @@ geo.post('/llms-txt', async (c) => {
   const body = (await c.req.json()) as { url: string };
   if (!body.url?.trim()) return c.json({ error: 'url is required' }, 400);
 
+  let validatedUrl: string;
   try {
-    const siteInfo = await crawlSite(body.url.trim());
+    validatedUrl = validatePublicUrl(body.url.trim());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 400);
+  }
+
+  try {
+    const siteInfo = await crawlSite(validatedUrl);
     const result = generateLlmsTxt({
       brand_name: siteInfo.brand_name,
-      url: body.url.trim(),
+      url: validatedUrl,
       description: siteInfo.description,
       features: siteInfo.features,
       h1s: [],
