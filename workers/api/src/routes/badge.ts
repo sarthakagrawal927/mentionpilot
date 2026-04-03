@@ -1,8 +1,20 @@
 import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { getDb } from '../db';
+import { WIDGET_JS } from './badge-widget-bundle';
 
 const badge = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+// GET /widget.js — serve the embeddable widget script
+badge.get('/widget.js', (c) => {
+  return new Response(WIDGET_JS, {
+    headers: {
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+});
 
 // GET /:projectId — public badge data (no auth)
 badge.get('/:projectId', async (c) => {
