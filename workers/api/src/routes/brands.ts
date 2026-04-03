@@ -95,4 +95,16 @@ brands.patch('/:projectId/schedule', async (c) => {
   return c.json({ ok: true, schedule });
 });
 
+// PATCH /:projectId/badge — enable or disable public badge
+brands.patch('/:projectId/badge', async (c) => {
+  const result = await verifyProjectOwnership(c, c.req.param('projectId'));
+  if (!result) return c.json({ error: 'Forbidden' }, 403);
+
+  const body = await c.req.json();
+  const enabled = !!body.enabled;
+
+  await result.db.updateBadgeEnabled(result.project.id, enabled);
+  return c.json({ ok: true, badge_enabled: enabled });
+});
+
 export { brands };

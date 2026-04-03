@@ -114,6 +114,12 @@ export function getDb(d1: D1Database) {
       return await d1.prepare(`SELECT * FROM brand_configs WHERE project_id = ?`).bind(projectId).first() as any | null;
     },
 
+    async updateBadgeEnabled(projectId: string, enabled: boolean) {
+      await d1.prepare(
+        `UPDATE brand_configs SET badge_enabled = ? WHERE project_id = ?`
+      ).bind(enabled ? 1 : 0, projectId).run();
+    },
+
     async deleteBrandConfig(projectId: string) {
       const { meta } = await d1.prepare(`DELETE FROM brand_configs WHERE project_id = ?`).bind(projectId).run();
       return (meta.changes ?? 0) > 0;
