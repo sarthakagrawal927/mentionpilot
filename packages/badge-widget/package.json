@@ -1,0 +1,13 @@
+{
+  "name": "@mentionpilot/badge-widget",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run build.ts --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}
