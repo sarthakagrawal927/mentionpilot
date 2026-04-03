@@ -188,6 +188,27 @@ export interface LlmsTxtResult {
   sections: string[];
 }
 
+// ─── Badge ──────────────────────────────────────────────────
+
+export interface BadgePlatformDetail {
+  platform: string;
+  mentioned: boolean;
+}
+
+export interface BadgeData {
+  project_id: string;
+  brand_name: string;
+  score: number;
+  grade: string;
+  platforms_checked: number;
+  platforms_mentioned: number;
+  mention_rate: number;
+  platform_details: BadgePlatformDetail[];
+  last_checked: string;
+  dashboard_url: string;
+  cached_at: string;
+}
+
 // ─── HN Monitoring ─────────────────────────────────────────
 
 export interface HNMention {
