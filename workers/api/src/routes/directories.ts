@@ -93,4 +93,52 @@ directories.get('/:projectId/auto-fill', async (c) => {
   return c.json(data);
 });
 
+// GET /:projectId/domain-rating -- check domain rating via OpenPageRank
+directories.get('/:projectId/domain-rating', async (c) => {
+  const result = await verifyProjectOwnership(c, c.req.param('projectId')!);
+  if (!result) return c.json({ error: 'Forbidden' }, 403);
+
+  const domain = c.req.query('domain');
+  if (!domain) return c.json({ error: 'domain query param is required' }, 400);
+
+  const apiKey = c.env.OPENPAGERANK_API_KEY;
+  if (!apiKey) return c.json({ error: 'OpenPageRank API key not configured' }, 500);
+
+  try {
+    const res = await fetch(
+      `https://openpagerank.com/api/v1.0/getPageRank?domains[]=${encodeURIComponent(domain)}`,
+      { headers: { 'API-OPR': apiKey } }
+    );
+
+    if (!res.ok) {
+      return c.json({ error: 'OpenPageRank API error', status: res.status }, 502);
+    }
+
+    const data = await res.json() as {
+      status_code: number;
+      response: Array<{
+        status_code: number;
+        page_rank_integer: number;
+        page_rank_decimal: number;
+        rank: string;
+        domain: string;
+      }>;
+    };
+
+    const entry = data.response?.[0];
+    if (!entry || entry.status_code !== 200) {
+      return c.json({ domain, page_rank: null, rank: null, error: 'Domain not found' });
+    }
+
+    return c.json({
+      domain: entry.domain,
+      page_rank: entry.page_rank_integer,
+      page_rank_decimal: entry.page_rank_decimal,
+      rank: entry.rank,
+    });
+  } catch (err) {
+    return c.json({ error: 'Failed to fetch domain rating' }, 500);
+  }
+});
+
 export { directories };

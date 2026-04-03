@@ -3,6 +3,7 @@ export interface Bindings {
   ENVIRONMENT: string;
   OPENAI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
+  OPENPAGERANK_API_KEY?: string;
 }
 
 export interface Variables {

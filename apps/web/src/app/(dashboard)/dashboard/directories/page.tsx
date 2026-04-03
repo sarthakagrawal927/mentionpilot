@@ -10,6 +10,8 @@ import {
   Send,
   ChevronDown,
   StickyNote,
+  Globe,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +60,8 @@ interface DirectoryEntry {
   estimated_monthly_traffic: string;
   free_tier: boolean;
   tags: string[];
+  domain_rating?: number;
+  backlink_type?: "dofollow" | "nofollow";
   submission: {
     id: string;
     status: Status;
@@ -65,6 +69,14 @@ interface DirectoryEntry {
     notes: string | null;
     listing_url: string | null;
   } | null;
+}
+
+interface DomainRating {
+  domain: string;
+  page_rank: number | null;
+  page_rank_decimal: number | null;
+  rank: string | null;
+  error?: string;
 }
 
 interface Stats {
@@ -151,6 +163,12 @@ export default function DirectoriesPage() {
 
   // Saving
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
+
+  // Domain rating check
+  const [drDomain, setDrDomain] = useState("");
+  const [drResult, setDrResult] = useState<DomainRating | null>(null);
+  const [drLoading, setDrLoading] = useState(false);
+  const [drError, setDrError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Data loading
@@ -322,6 +340,24 @@ export default function DirectoriesPage() {
     await navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const checkDomainRating = async () => {
+    if (!drDomain.trim() || !projectId) return;
+    setDrLoading(true);
+    setDrError(null);
+    setDrResult(null);
+    try {
+      const domain = drDomain.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+      const data = await apiFetch<DomainRating>(
+        `/v1/directories/${projectId}/domain-rating?domain=${encodeURIComponent(domain)}`
+      );
+      setDrResult(data);
+    } catch (err) {
+      setDrError((err as Error).message);
+    } finally {
+      setDrLoading(false);
+    }
   };
 
   const toggleExpanded = (slug: string) => {
@@ -513,6 +549,81 @@ export default function DirectoriesPage() {
         )}
       </Card>
 
+      {/* Domain Rating Checker */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Domain Rating Checker
+          </CardTitle>
+          <CardDescription>
+            Check your domain&apos;s PageRank score (0-10) via OpenPageRank.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="yourdomain.com"
+                value={drDomain}
+                onChange={(e) => setDrDomain(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && checkDomainRating()}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={checkDomainRating} disabled={drLoading || !drDomain.trim()}>
+              {drLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : (
+                <Search className="h-4 w-4 mr-1.5" />
+              )}
+              Check
+            </Button>
+          </div>
+
+          {drError && (
+            <p className="mt-3 text-sm text-destructive">{drError}</p>
+          )}
+
+          {drResult && (
+            <div className="mt-4 rounded-md border bg-muted/30 p-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div>
+                  <p className="text-xs text-muted-foreground">Domain</p>
+                  <p className="font-medium text-sm">{drResult.domain}</p>
+                </div>
+                {drResult.page_rank !== null ? (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground">PageRank</p>
+                      <p className="text-2xl font-bold">
+                        {drResult.page_rank}
+                        <span className="text-sm font-normal text-muted-foreground">/10</span>
+                      </p>
+                    </div>
+                    {drResult.page_rank_decimal !== null && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Precise</p>
+                        <p className="font-medium text-sm">{drResult.page_rank_decimal.toFixed(2)}</p>
+                      </div>
+                    )}
+                    {drResult.rank && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Global Rank</p>
+                        <p className="font-medium text-sm">#{Number(drResult.rank).toLocaleString()}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No ranking data found for this domain.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Separator />
 
       {/* Search and category filters */}
@@ -604,6 +715,23 @@ export default function DirectoriesPage() {
                           <Badge variant="outline" className="text-xs">
                             {CATEGORY_LABELS[dir.category] || dir.category}
                           </Badge>
+                          {dir.domain_rating != null && (
+                            <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                              DR {dir.domain_rating}
+                            </span>
+                          )}
+                          {dir.backlink_type && (
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs border-0 ${
+                                dir.backlink_type === "dofollow"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                              }`}
+                            >
+                              {dir.backlink_type}
+                            </Badge>
+                          )}
                           {dir.estimated_monthly_traffic && (
                             <span className="text-xs text-muted-foreground">
                               ~{dir.estimated_monthly_traffic}/mo
