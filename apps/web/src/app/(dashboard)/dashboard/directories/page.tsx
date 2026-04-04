@@ -119,7 +119,7 @@ const STATUS_COLORS: Record<string, string> = {
   pending:
     "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
   submitted:
-    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    "bg-primary/10 text-primary",
   approved:
     "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   rejected:
@@ -413,7 +413,7 @@ export default function DirectoriesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-primary">
               {stats.submitted}
             </div>
             <p className="text-sm text-muted-foreground">Submitted</p>
@@ -693,7 +693,7 @@ export default function DirectoriesPage() {
                       currentStatus === "approved"
                         ? "border-green-200 dark:border-green-900/50"
                         : currentStatus === "submitted"
-                          ? "border-blue-200 dark:border-blue-900/50"
+                          ? "border-primary/40"
                           : currentStatus === "skipped"
                             ? "border-orange-200 dark:border-orange-900/50 opacity-60"
                             : ""
@@ -762,7 +762,7 @@ export default function DirectoriesPage() {
                         >
                           <StickyNote className="h-4 w-4" />
                           {dir.submission?.notes && (
-                            <span className="ml-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            <span className="ml-1 h-1.5 w-1.5 rounded-full bg-primary" />
                           )}
                         </Button>
 
@@ -858,6 +858,10 @@ export default function DirectoriesPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+d>
     </div>
   );
 }

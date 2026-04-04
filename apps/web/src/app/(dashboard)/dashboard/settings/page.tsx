@@ -164,11 +164,11 @@ export default function SettingsPage() {
               {/* Live Preview */}
               <div className="space-y-2">
                 <Label>Preview</Label>
-                <div className={`rounded-lg border p-6 flex items-center justify-center ${badgeTheme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
+                <div className={`rounded-lg border p-6 flex items-center justify-center ${badgeTheme === "dark" ? "bg-card/50" : "bg-muted/30"}`}>
                   <div className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full border shadow-sm text-sm ${
                     badgeTheme === "dark"
-                      ? "bg-[#1a1a2e] text-gray-100 border-gray-700"
-                      : "bg-white text-gray-900 border-gray-200"
+                      ? "bg-primary/10 text-primary-foreground border-primary/20"
+                      : "bg-card text-foreground border-border"
                   }`}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
                       <rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" strokeWidth="1.2"/>

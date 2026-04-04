@@ -36,40 +36,43 @@ export default async function DashboardLayout({
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar-background md:block">
-        <div className="flex h-14 items-center px-6">
-          <Link href="/dashboard" className="text-lg font-semibold">
+    <div className="flex min-h-screen bg-background">
+      <aside className="hidden w-72 shrink-0 border-r border-border bg-card md:block">
+        <div className="flex h-16 items-center px-6">
+          <Link href="/dashboard" className="flex items-center gap-2 text-xl font-black tracking-tight text-primary">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm shadow-lg shadow-primary/20">M</div>
             MentionPilot
           </Link>
         </div>
-        <Separator />
-        <nav className="flex flex-col gap-1 p-4">
+        <div className="px-4 py-2">
+          <Separator className="opacity-50" />
+        </div>
+        <nav className="flex flex-col gap-1.5 p-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold text-muted-foreground transition-all hover:bg-primary/5 hover:text-primary active:scale-95"
             >
               <item.icon className="h-4 w-4" />
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="mt-auto border-t p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="mt-auto border-t border-border p-6 bg-muted/20">
+          <div className="flex items-center gap-4 mb-4">
             {session.user.image && (
               <img
                 src={session.user.image}
                 alt=""
-                className="h-8 w-8 rounded-full"
+                className="h-10 w-10 rounded-full border-2 border-primary/20 p-0.5 shadow-sm"
               />
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
+              <p className="truncate text-sm font-bold text-foreground">
                 {session.user.name}
               </p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-[11px] font-medium text-muted-foreground opacity-70">
                 {session.user.email}
               </p>
             </div>
@@ -81,10 +84,10 @@ export default async function DashboardLayout({
             }}
           >
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               type="submit"
-              className="w-full justify-start"
+              className="w-full justify-start border-primary/10 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 font-bold"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
@@ -94,14 +97,14 @@ export default async function DashboardLayout({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center gap-4 border-b px-4 md:hidden">
+        <header className="flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-md px-6 md:hidden">
           <Button variant="ghost" size="icon">
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle menu</span>
           </Button>
-          <span className="text-lg font-semibold">MentionPilot</span>
+          <span className="text-xl font-black tracking-tight text-primary">MentionPilot</span>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-8 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

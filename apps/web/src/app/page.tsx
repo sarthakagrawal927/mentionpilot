@@ -78,285 +78,214 @@ const stats = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-bold">
-            MentionPilot
+          <Link href="/" className="text-lg font-bold tracking-tight text-primary flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm shadow-lg shadow-primary/20">M</div>
+            <span>MentionPilot</span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm md:flex">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#tools" className="text-muted-foreground hover:text-foreground transition-colors">Free Tools</a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-            <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
+          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+            <a href="#features" className="text-muted-foreground hover:text-primary transition-colors">Features</a>
+            <a href="#tools" className="text-muted-foreground hover:text-primary transition-colors">Free Tools</a>
+            <a href="#pricing" className="text-muted-foreground hover:text-primary transition-colors">Pricing</a>
+            <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">Blog</Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="ghost" size="sm" className="font-medium">Sign In</Button>
             </Link>
             <Link href="/check">
-              <Button size="sm">Free Brand Check</Button>
+              <Button size="sm" className="bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 transition-transform font-bold">
+                Free Brand Check
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
-        <Badge variant="secondary" className="mb-6 text-sm px-4 py-1">
-          AI Visibility Platform for Startups
-        </Badge>
-        <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-          Do AI assistants<br />
-          <span className="bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
-            know your product?
-          </span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-          Check if ChatGPT, Claude, Gemini, and Perplexity recommend your product.
-          Track mentions, optimize your content, and monitor social buzz — all in one platform.
-        </p>
-        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link href="/check">
-            <Button size="lg" className="px-8 text-base">
-              <Search className="mr-2 h-5 w-5" />
-              Free AI Brand Check
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button size="lg" variant="outline" className="px-8 text-base">
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
-        <p className="mt-4 text-sm text-muted-foreground">
-          No credit card required. BYOK — bring your own API keys.
-        </p>
-      </section>
-
-      {/* Stats */}
-      <section className="border-y bg-muted/30">
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-4 py-12 sm:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold">{stat.value}</div>
-              <div className="mt-1 text-sm text-muted-foreground">{stat.label}</div>
+      <main>
+        {/* Hero Section */}
+        <section className="relative overflow-hidden pt-28 pb-20 px-4">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_45%_at_50%_50%,var(--primary)_0%,transparent_100%)] opacity-[0.05]" />
+          <div className="mx-auto max-w-4xl text-center">
+            <Badge variant="outline" className="mb-8 border-accent/20 bg-accent/5 text-accent px-4 py-1.5 font-bold tracking-wide uppercase text-[10px]">
+              <Zap className="w-3 h-3 mr-2 fill-current" />
+              AI Visibility Platform for Startups
+            </Badge>
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-8">
+              Do AI assistants<br />
+              <span className="bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent italic">
+                know your product?
+              </span>
+            </h1>
+            <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
+              Check if ChatGPT, Claude, Gemini, and Perplexity recommend your product.
+              Track mentions, optimize your content, and monitor social buzz — all in one platform.
+            </p>
+            <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <Link href="/check">
+                <Button size="lg" className="h-14 px-10 text-base font-bold shadow-2xl shadow-primary/30">
+                  <Search className="mr-2 h-5 w-5" />
+                  Free AI Brand Check
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="h-14 px-10 text-base font-bold border-primary/20 hover:bg-primary/5">
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
-          ))}
-        </div>
-      </section>
+            <p className="mt-6 text-sm text-muted-foreground font-medium">
+              No credit card required. BYOK — bring your own API keys.
+            </p>
+          </div>
+        </section>
 
-      {/* Features */}
-      <section id="features" className="mx-auto max-w-6xl px-4 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Everything you need for AI visibility
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Monitor, optimize, and improve how AI assistants talk about your product.
-            What Scrunch AI charges $250/mo for, we give you for free.
-          </p>
-        </div>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <Card key={feature.title} className="border-border/50">
-              <CardHeader>
-                <feature.icon className="h-10 w-10 mb-2 text-primary" />
-                <CardTitle>{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-sm">{feature.description}</p>
+        {/* Stats */}
+        <section className="border-y border-border bg-muted/20 backdrop-blur-sm">
+          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-4 py-16 sm:grid-cols-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center group">
+                <div className="text-4xl font-black text-primary group-hover:scale-110 transition-transform">{stat.value}</div>
+                <div className="mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className="mx-auto max-w-6xl px-4 py-32">
+          <div className="text-center mb-24">
+            <h2 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+              Everything you need for AI visibility
+            </h2>
+            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Monitor, optimize, and improve how AI assistants talk about your product.
+              What competitors charge $250/mo for, we give you for free.
+            </p>
+          </div>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
+              <Card key={feature.title} className="border-border/40 bg-card/50 backdrop-blur hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all group">
+                <CardHeader>
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform">
+                    <feature.icon className="h-7 w-7" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="border-y border-border bg-muted/20 py-32">
+          <div className="mx-auto max-w-4xl px-4">
+            <h2 className="text-center text-4xl font-black tracking-tight sm:text-5xl mb-24">
+              How it works
+            </h2>
+            <div className="grid gap-12 sm:grid-cols-3">
+              {[
+                { step: "1", title: "Configure", description: "Add your brand name, URL, competitors, and API keys. We support OpenAI, Anthropic, Google, and Perplexity." },
+                { step: "2", title: "Check", description: "Add prompts users might ask AI, or let us auto-generate them. Click Run — we query all platforms in parallel." },
+                { step: "3", title: "Optimize", description: "See which platforms mention you, your sentiment and position. Use GEO tools and AXP to improve your visibility." },
+              ].map((item) => (
+                <div key={item.step} className="text-center group">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-black shadow-xl shadow-primary/20 group-hover:scale-110 transition-transform">
+                    {item.step}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* AXP Section */}
+        <section className="mx-auto max-w-6xl px-4 py-32">
+          <div className="grid gap-16 lg:grid-cols-2 items-center">
+            <div>
+              <Badge variant="outline" className="mb-6 border-primary/20 bg-primary/5 text-primary">AXP Shadow Site</Badge>
+              <h2 className="text-4xl font-black tracking-tight sm:text-5xl leading-tight">
+                Serve AI-optimized content to bots
+              </h2>
+              <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
+                Your pages have 124K tokens of navigation, scripts, styles, and noise.
+                AI bots waste context parsing all of it. AXP strips it down to ~1.2K tokens
+                of pure signal — a 99% reduction.
+              </p>
+              <ul className="mt-10 space-y-4">
+                {[
+                  "Crawl your site and auto-generate optimized versions",
+                  "Deploy as Cloudflare Worker or Vercel middleware",
+                  "Humans see your normal site, bots see the optimized version",
+                  "Track which AI bots visit and how often",
+                  "Edit optimized content from the dashboard",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 font-medium">
+                    <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center mt-0.5 shrink-0">
+                      <Check className="h-3 w-3 text-green-500" />
+                    </div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-12">
+                <Link href="/login">
+                  <Button size="lg" className="h-14 px-10 font-bold shadow-xl shadow-primary/20">
+                    Set Up AXP <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <Card className="bg-muted/30 border-dashed border-border p-8 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="p-0 font-mono text-[13px] leading-relaxed text-muted-foreground relative">
+                <div className="text-primary font-bold mb-4"># YourProduct</div>
+                <div className="mb-2 opacity-60">URL: https://yourproduct.com</div>
+                <div className="mb-6 text-foreground font-medium">&gt; The all-in-one platform for...</div>
+                <div className="text-primary font-bold mb-2">## Key Features</div>
+                <div className="space-y-1">
+                  <div>- Real-time analytics dashboard</div>
+                  <div>- Team collaboration tools</div>
+                  <div>- API with 99.9% uptime</div>
+                </div>
+                <div className="mt-6 text-primary font-bold mb-2">## Pricing</div>
+                <div className="space-y-1">
+                  <div>- Free tier: up to 1,000 events</div>
+                  <div>- Pro: $29/mo unlimited</div>
+                </div>
+                <div className="mt-8 pt-8 border-t border-dashed border-border flex items-center justify-between">
+                  <div className="text-green-500 font-bold animate-pulse">124K tokens → 1.2K tokens</div>
+                  <div className="text-xs font-bold bg-green-500/10 text-green-500 px-3 py-1 rounded-full">99% reduction</div>
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="border-y bg-muted/30 py-24">
-        <div className="mx-auto max-w-4xl px-4">
-          <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl mb-16">
-            How it works
-          </h2>
-          <div className="grid gap-12 sm:grid-cols-3">
-            {[
-              { step: "1", title: "Configure", description: "Add your brand name, URL, competitors, and API keys. We support OpenAI, Anthropic, Google, and Perplexity." },
-              { step: "2", title: "Check", description: "Add prompts users might ask AI, or let us auto-generate them. Click Run — we query all platforms in parallel." },
-              { step: "3", title: "Optimize", description: "See which platforms mention you, your sentiment and position. Use GEO tools and AXP to improve your visibility." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-bold">
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-              </div>
-            ))}
           </div>
-        </div>
-      </section>
-
-      {/* AXP Section */}
-      <section className="mx-auto max-w-6xl px-4 py-24">
-        <div className="grid gap-12 lg:grid-cols-2 items-center">
-          <div>
-            <Badge variant="outline" className="mb-4">AXP Shadow Site</Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Serve AI-optimized content to bots
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Your pages have 124K tokens of navigation, scripts, styles, and noise.
-              AI bots waste context parsing all of it. AXP strips it down to ~1.2K tokens
-              of pure signal — a 99% reduction.
-            </p>
-            <ul className="mt-6 space-y-3">
-              {[
-                "Crawl your site and auto-generate optimized versions",
-                "Deploy as Cloudflare Worker or Vercel middleware",
-                "Humans see your normal site, bots see the optimized version",
-                "Track which AI bots visit and how often",
-                "Edit optimized content from the dashboard",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8">
-              <Link href="/login">
-                <Button>Set Up AXP <ArrowRight className="ml-2 h-4 w-4" /></Button>
-              </Link>
-            </div>
-          </div>
-          <Card className="bg-muted/50 border-dashed">
-            <CardContent className="pt-6 font-mono text-xs leading-relaxed text-muted-foreground">
-              <div className="text-foreground mb-2"># YourProduct</div>
-              <div className="mb-2 text-muted-foreground/70">URL: https://yourproduct.com</div>
-              <div className="mb-4">&gt; The all-in-one platform for...</div>
-              <div className="text-foreground mb-1">## Key Features</div>
-              <div>- Real-time analytics dashboard</div>
-              <div>- Team collaboration tools</div>
-              <div>- API with 99.9% uptime</div>
-              <div className="mt-4 text-foreground mb-1">## Pricing</div>
-              <div>- Free tier: up to 1,000 events</div>
-              <div>- Pro: $29/mo unlimited</div>
-              <div className="mt-4 text-foreground mb-1">## FAQ</div>
-              <div>Q: How does it compare to X?</div>
-              <div>A: We focus on simplicity and...</div>
-              <div className="mt-4 pt-4 border-t border-dashed text-green-500">
-                124K tokens → 1.2K tokens (99% reduction)
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Free Tools */}
-      <section id="tools" className="border-y bg-muted/30 py-24">
-        <div className="mx-auto max-w-4xl px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Free tools. No signup.
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Check your AI visibility right now. Zero commitment.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {freeTools.map((tool) => (
-              <Link key={tool.title} href={tool.href}>
-                <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{tool.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{tool.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing / Comparison */}
-      <section id="pricing" className="mx-auto max-w-4xl px-4 py-24">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Why pay $100+/mo?
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Competitors charge $29-599/mo for limited prompts. We&apos;re free — you only pay for your own API keys (~$0.03/check).
-          </p>
-        </div>
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium">Tool</th>
-                <th className="px-4 py-3 text-left font-medium">Price</th>
-                <th className="px-4 py-3 text-left font-medium">Prompts</th>
-                <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {competitors.map((c) => (
-                <tr
-                  key={c.name}
-                  className={`border-b ${c.highlight ? "bg-primary/5 font-medium" : ""}`}
-                >
-                  <td className="px-4 py-3">
-                    {c.name}
-                    {c.highlight && <Badge className="ml-2 text-xs">You</Badge>}
-                  </td>
-                  <td className="px-4 py-3">{c.price}</td>
-                  <td className="px-4 py-3">{c.prompts}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{c.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t bg-muted/30 py-24">
-        <div className="mx-auto max-w-2xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Ready to check your AI visibility?
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Start with a free brand check — no account required.
-            Or sign up for the full dashboard with trending, optimization, and monitoring.
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/check">
-              <Button size="lg" className="px-8">
-                <Search className="mr-2 h-5 w-5" />
-                Free Brand Check
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="px-8">
-                Sign Up Free
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 sm:flex-row sm:justify-between">
-          <p className="text-sm text-muted-foreground">MentionPilot</p>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="/tools" className="hover:text-foreground transition-colors">Free Tools</Link>
-            <Link href="/check" className="hover:text-foreground transition-colors">Brand Check</Link>
-            <Link href="/login" className="hover:text-foreground transition-colors">Dashboard</Link>
+      <footer className="border-t border-border bg-muted/20 py-16">
+        <div className="mx-auto max-w-6xl px-4 text-center">
+          <Link href="/" className="text-xl font-bold tracking-tight text-primary mb-8 block">
+            MentionPilot
+          </Link>
+          <div className="flex justify-center gap-8 mb-8 text-sm font-medium text-muted-foreground">
+            <a href="#" className="hover:text-primary transition-colors">Twitter</a>
+            <a href="#" className="hover:text-primary transition-colors">GitHub</a>
+            <a href="#" className="hover:text-primary transition-colors">Discord</a>
           </div>
+          <p className="text-xs text-muted-foreground opacity-60">
+            &copy; {new Date().getFullYear()} MentionPilot. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
