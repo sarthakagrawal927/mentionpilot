@@ -861,7 +861,3 @@ export default function DirectoriesPage() {
     </div>
   );
 }
-d>
-    </div>
-  );
-}
