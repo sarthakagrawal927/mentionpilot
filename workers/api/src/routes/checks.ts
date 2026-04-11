@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { requireSession, verifyProjectOwnership } from '../middleware/auth';
 import { runMentionCheck } from '../lib/ai-engine';
-import type { AIPlatform, ResultRecord } from '@mentionpilot/shared';
+import type { ResultRecord } from '@mentionpilot/shared';
 
 const checks = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 checks.use('*', requireSession);
@@ -25,24 +25,15 @@ checks.post('/:projectId', async (c) => {
   const config = await result.db.getBrandConfig(result.project.id);
   if (!config) return c.json({ error: 'Configure brand first' }, 400);
 
+  if (!config.ai_endpoint_url || !config.ai_api_key || !config.ai_model) {
+    return c.json({ error: 'Configure AI endpoint, API key, and model in settings' }, 400);
+  }
+
   const promptList = await result.db.listPrompts(result.project.id);
   if (promptList.length === 0) return c.json({ error: 'Add at least one prompt' }, 400);
 
-  const platforms: AIPlatform[] = JSON.parse(config.platforms);
-  const activePlatforms = platforms.filter((p: AIPlatform) => {
-    const keyMap: Record<AIPlatform, string | null> = {
-      openai: config.openai_api_key,
-      anthropic: config.anthropic_api_key,
-      google: config.google_api_key,
-      perplexity: config.perplexity_api_key,
-    };
-    return !!keyMap[p];
-  });
-
-  if (activePlatforms.length === 0) return c.json({ error: 'Add at least one API key' }, 400);
-
   const checkId = crypto.randomUUID();
-  const totalQueries = promptList.length * activePlatforms.length;
+  const totalQueries = promptList.length; // one endpoint per prompt now
 
   const check = await result.db.createCheck({
     id: checkId,
@@ -96,6 +87,9 @@ checks.get('/:projectId/dashboard', async (c) => {
     has_anthropic_key: !!configRow.anthropic_api_key,
     has_google_key: !!configRow.google_api_key,
     has_perplexity_key: !!configRow.perplexity_api_key,
+    ai_endpoint_url: configRow.ai_endpoint_url || null,
+    has_ai_api_key: !!configRow.ai_api_key,
+    ai_model: configRow.ai_model || null,
     created_at: configRow.created_at,
     updated_at: configRow.updated_at,
   } : null;

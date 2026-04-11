@@ -12,7 +12,9 @@ import {
   ChevronUp,
   Loader2,
   Key,
+  RefreshCw,
 } from "lucide-react";
+import { useModelDiscovery } from "@saas-maker/ai";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,11 +52,18 @@ export default function MentionsPage() {
   const [brandAliases, setBrandAliases] = useState("");
   const [brandUrl, setBrandUrl] = useState("");
   const [competitors, setCompetitors] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [anthropicKey, setAnthropicKey] = useState("");
-  const [googleKey, setGoogleKey] = useState("");
-  const [perplexityKey, setPerplexityKey] = useState("");
+  const [aiEndpointUrl, setAiEndpointUrl] = useState("");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiModel, setAiModel] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Model discovery
+  const {
+    models: availableModels,
+    loading: loadingModels,
+    discover: discoverModelsHook,
+  } = useModelDiscovery({ modelsApiUrl: "/api/ai/models" });
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
 
   // Prompt form
   const [newPrompt, setNewPrompt] = useState("");
@@ -83,6 +92,8 @@ export default function MentionsPage() {
         setCompetitors(
           data.config.competitors.map((c) => c.name).join(", ")
         );
+        setAiEndpointUrl(data.config.ai_endpoint_url || "");
+        setAiModel(data.config.ai_model || "");
       }
     } catch (err) {
       setError((err as Error).message);
@@ -116,6 +127,19 @@ export default function MentionsPage() {
     return () => clearInterval(interval);
   }, [pollingCheck, projectId, loadDashboard]);
 
+  const discoverModels = async () => {
+    const url = aiEndpointUrl.trim();
+    const key = aiApiKey.trim() || undefined;
+    if (!url) return;
+
+    // Use saved key if user hasn't entered a new one
+    const effectiveKey = key || (config?.has_ai_api_key ? "__saved__" : undefined);
+    if (!effectiveKey) return;
+
+    await discoverModelsHook(url, key || "");
+    setShowModelDropdown(true);
+  };
+
   const saveConfig = async () => {
     setSaving(true);
     try {
@@ -132,20 +156,16 @@ export default function MentionsPage() {
           .filter(Boolean)
           .map((name) => ({ name })),
       };
-      if (openaiKey) payload.openai_api_key = openaiKey;
-      if (anthropicKey) payload.anthropic_api_key = anthropicKey;
-      if (googleKey) payload.google_api_key = googleKey;
-      if (perplexityKey) payload.perplexity_api_key = perplexityKey;
+      if (aiEndpointUrl) payload.ai_endpoint_url = aiEndpointUrl;
+      if (aiApiKey) payload.ai_api_key = aiApiKey;
+      if (aiModel) payload.ai_model = aiModel;
 
       const updated = await apiFetch<BrandConfigRecord>(
         `/v1/brands/${projectId}/config`,
         { method: "POST", body: JSON.stringify(payload) }
       );
       setConfig(updated);
-      setOpenaiKey("");
-      setAnthropicKey("");
-      setGoogleKey("");
-      setPerplexityKey("");
+      setAiApiKey("");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -245,7 +265,7 @@ export default function MentionsPage() {
             Brand Configuration
           </CardTitle>
           <CardDescription>
-            Set up your brand details and API keys.
+            Set up your brand details and AI endpoint.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -292,84 +312,101 @@ export default function MentionsPage() {
 
           <h4 className="text-sm font-medium flex items-center gap-2">
             <Key className="h-4 w-4" />
-            API Keys (BYOK)
+            AI Endpoint
           </h4>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <p className="text-xs text-muted-foreground">
+            Any OpenAI-compatible API endpoint. Works with OpenAI, OpenRouter,
+            Together, Groq, local models, and more.
+          </p>
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>
-                OpenAI
-                {config?.has_openai_key && (
+              <Label htmlFor="ai-endpoint-url">
+                Endpoint URL
+                {config?.ai_endpoint_url && (
                   <Badge variant="secondary" className="ml-2 text-xs">
                     saved
                   </Badge>
                 )}
               </Label>
               <Input
-                type="password"
-                placeholder={
-                  config?.has_openai_key ? "\u2022\u2022\u2022\u2022" : "sk-..."
-                }
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
+                id="ai-endpoint-url"
+                placeholder="https://api.openai.com/v1/chat/completions"
+                value={aiEndpointUrl}
+                onChange={(e) => setAiEndpointUrl(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>
-                Anthropic
-                {config?.has_anthropic_key && (
+              <Label htmlFor="ai-api-key">
+                API Key
+                {config?.has_ai_api_key && (
                   <Badge variant="secondary" className="ml-2 text-xs">
                     saved
                   </Badge>
                 )}
               </Label>
               <Input
+                id="ai-api-key"
                 type="password"
                 placeholder={
-                  config?.has_anthropic_key
-                    ? "\u2022\u2022\u2022\u2022"
-                    : "sk-ant-..."
+                  config?.has_ai_api_key ? "\u2022\u2022\u2022\u2022" : "sk-..."
                 }
-                value={anthropicKey}
-                onChange={(e) => setAnthropicKey(e.target.value)}
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>
-                Google AI
-                {config?.has_google_key && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    saved
-                  </Badge>
-                )}
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ai-model">
+                  Model
+                  {config?.ai_model && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      saved
+                    </Badge>
+                  )}
+                </Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={discoverModels}
+                  disabled={loadingModels || !aiEndpointUrl.trim()}
+                  className="h-7 text-xs"
+                >
+                  {loadingModels ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Fetch Models
+                </Button>
+              </div>
               <Input
-                type="password"
-                placeholder={
-                  config?.has_google_key ? "\u2022\u2022\u2022\u2022" : "AI..."
-                }
-                value={googleKey}
-                onChange={(e) => setGoogleKey(e.target.value)}
+                id="ai-model"
+                placeholder="gpt-4o-mini"
+                value={aiModel}
+                onChange={(e) => {
+                  setAiModel(e.target.value);
+                  setShowModelDropdown(false);
+                }}
+                onFocus={() => {
+                  if (availableModels.length > 0) setShowModelDropdown(true);
+                }}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                Perplexity
-                {config?.has_perplexity_key && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    saved
-                  </Badge>
-                )}
-              </Label>
-              <Input
-                type="password"
-                placeholder={
-                  config?.has_perplexity_key
-                    ? "\u2022\u2022\u2022\u2022"
-                    : "pplx-..."
-                }
-                value={perplexityKey}
-                onChange={(e) => setPerplexityKey(e.target.value)}
-              />
+              {showModelDropdown && availableModels.length > 0 && (
+                <div className="max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+                  {availableModels.map((modelId) => (
+                    <button
+                      key={modelId}
+                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                      onClick={() => {
+                        setAiModel(modelId);
+                        setShowModelDropdown(false);
+                      }}
+                    >
+                      <span className="truncate">{modelId}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -518,9 +555,6 @@ export default function MentionsPage() {
                         ) : (
                           <X className="h-4 w-4 text-red-500 shrink-0" />
                         )}
-                        <Badge variant="outline" className="shrink-0">
-                          {result.platform}
-                        </Badge>
                         <span className="truncate text-muted-foreground">
                           {prompts.find((p) => p.id === result.prompt_id)
                             ?.prompt_text || result.prompt_id}

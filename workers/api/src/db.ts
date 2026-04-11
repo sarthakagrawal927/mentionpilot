@@ -68,7 +68,8 @@ export function getDb(d1: D1Database) {
     async listScheduledProjects(schedule: string) {
       const { results } = await d1.prepare(
         `SELECT p.*, bc.brand_name, bc.brand_aliases, bc.brand_url, bc.competitors, bc.platforms,
-                bc.openai_api_key, bc.anthropic_api_key, bc.google_api_key, bc.perplexity_api_key
+                bc.openai_api_key, bc.anthropic_api_key, bc.google_api_key, bc.perplexity_api_key,
+                bc.ai_endpoint_url, bc.ai_api_key, bc.ai_model
          FROM projects p
          JOIN brand_configs bc ON bc.project_id = p.id
          WHERE p.check_schedule = ?`
@@ -89,10 +90,11 @@ export function getDb(d1: D1Database) {
       competitors: string; platforms: string;
       openai_api_key: string | null; anthropic_api_key: string | null;
       google_api_key: string | null; perplexity_api_key: string | null;
+      ai_endpoint_url: string | null; ai_api_key: string | null; ai_model: string | null;
     }) {
       await d1.prepare(
-        `INSERT INTO brand_configs (id, project_id, brand_name, brand_aliases, brand_url, competitors, platforms, openai_api_key, anthropic_api_key, google_api_key, perplexity_api_key)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO brand_configs (id, project_id, brand_name, brand_aliases, brand_url, competitors, platforms, openai_api_key, anthropic_api_key, google_api_key, perplexity_api_key, ai_endpoint_url, ai_api_key, ai_model)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (project_id) DO UPDATE SET
            brand_name = EXCLUDED.brand_name, brand_aliases = EXCLUDED.brand_aliases,
            brand_url = EXCLUDED.brand_url, competitors = EXCLUDED.competitors,
@@ -101,11 +103,15 @@ export function getDb(d1: D1Database) {
            anthropic_api_key = COALESCE(EXCLUDED.anthropic_api_key, brand_configs.anthropic_api_key),
            google_api_key = COALESCE(EXCLUDED.google_api_key, brand_configs.google_api_key),
            perplexity_api_key = COALESCE(EXCLUDED.perplexity_api_key, brand_configs.perplexity_api_key),
+           ai_endpoint_url = COALESCE(EXCLUDED.ai_endpoint_url, brand_configs.ai_endpoint_url),
+           ai_api_key = COALESCE(EXCLUDED.ai_api_key, brand_configs.ai_api_key),
+           ai_model = COALESCE(EXCLUDED.ai_model, brand_configs.ai_model),
            updated_at = datetime('now')`
       ).bind(
         input.id, input.project_id, input.brand_name, input.brand_aliases,
         input.brand_url, input.competitors, input.platforms,
-        input.openai_api_key, input.anthropic_api_key, input.google_api_key, input.perplexity_api_key
+        input.openai_api_key, input.anthropic_api_key, input.google_api_key, input.perplexity_api_key,
+        input.ai_endpoint_url, input.ai_api_key, input.ai_model
       ).run();
       return await d1.prepare(`SELECT * FROM brand_configs WHERE project_id = ?`).bind(input.project_id).first() as any;
     },

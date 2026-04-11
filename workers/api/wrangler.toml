@@ -4,7 +4,11 @@ compatibility_date = "2025-01-01"
 
 [vars]
 ENVIRONMENT = "production"
-# Free check API keys — set in Cloudflare dashboard, not here
+# Free check — single OpenAI-compatible endpoint, set in Cloudflare dashboard
+# FREE_AI_ENDPOINT_URL = ""
+# FREE_AI_API_KEY = ""
+# FREE_AI_MODEL = ""
+# Legacy free check keys (deprecated — use FREE_AI_* instead)
 # OPENAI_API_KEY = ""
 # GOOGLE_API_KEY = ""
 

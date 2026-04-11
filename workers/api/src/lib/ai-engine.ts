@@ -1,8 +1,13 @@
 // AI query engine for MentionPilot
-// Queries multiple AI platforms, detects brand mentions, and analyzes responses.
+// Uses a single OpenAI-compatible endpoint configured by the user.
 
-export type Platform = 'openai' | 'anthropic' | 'google' | 'perplexity';
+import { fetchChatCompletion } from '@saas-maker/ai';
+import type { AIConfig } from '@saas-maker/ai';
+
 export type Sentiment = 'positive' | 'neutral' | 'negative';
+
+/** @deprecated Use AIConfig from @saas-maker/ai */
+export type AiEndpointConfig = AIConfig;
 
 export interface PlatformResponse {
   responseText: string;
@@ -25,139 +30,41 @@ export interface AnalysisResult {
   brand_cited: boolean;
 }
 
-interface PlatformConfig {
-  url: string;
-  model: string;
-  buildRequest: (apiKey: string, prompt: string) => { url: string; init: RequestInit };
-  parseResponse: (json: Record<string, unknown>) => string;
-}
-
 // ---------------------------------------------------------------------------
-// Platform configurations
+// Query an OpenAI-compatible endpoint
 // ---------------------------------------------------------------------------
 
-const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
-  openai: {
-    url: 'https://api.openai.com/v1/chat/completions',
-    model: 'gpt-4o-mini',
-    buildRequest: (apiKey, prompt) => ({
-      url: 'https://api.openai.com/v1/chat/completions',
-      init: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1024,
-        }),
-      },
-    }),
-    parseResponse: (json: Record<string, unknown>) => {
-      const choices = json.choices as Array<{ message?: { content?: string } }> | undefined;
-      return choices?.[0]?.message?.content || '';
-    },
-  },
-
-  anthropic: {
-    url: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-haiku-4-5-20251001',
-    buildRequest: (apiKey, prompt) => ({
-      url: 'https://api.anthropic.com/v1/messages',
-      init: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      },
-    }),
-    parseResponse: (json: Record<string, unknown>) => {
-      const content = json.content as Array<{ text?: string }> | undefined;
-      return content?.[0]?.text || '';
-    },
-  },
-
-  google: {
-    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    model: 'gemini-2.0-flash',
-    buildRequest: (apiKey, prompt) => ({
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1024 },
-        }),
-      },
-    }),
-    parseResponse: (json: Record<string, unknown>) => {
-      const candidates = json.candidates as Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }> | undefined;
-      return candidates?.[0]?.content?.parts?.[0]?.text || '';
-    },
-  },
-
-  perplexity: {
-    url: 'https://api.perplexity.ai/chat/completions',
-    model: 'sonar',
-    buildRequest: (apiKey, prompt) => ({
-      url: 'https://api.perplexity.ai/chat/completions',
-      init: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'sonar',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1024,
-        }),
-      },
-    }),
-    parseResponse: (json: Record<string, unknown>) => {
-      const choices = json.choices as Array<{ message?: { content?: string } }> | undefined;
-      return choices?.[0]?.message?.content || '';
-    },
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Query a single platform
-// ---------------------------------------------------------------------------
-
-export async function queryPlatform(
-  platform: Platform,
-  apiKey: string,
+export async function queryEndpoint(
+  config: AIConfig,
   prompt: string
 ): Promise<PlatformResponse> {
-  const config = PLATFORM_CONFIGS[platform];
-  const { url, init } = config.buildRequest(apiKey, prompt);
-
   const start = Date.now();
-  const res = await fetch(url, init);
+  const res = await fetchChatCompletion({
+    config,
+    messages: [{ role: 'user', content: prompt }],
+    maxTokens: 1024,
+    stream: false,
+  });
   const latencyMs = Date.now() - start;
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${platform} API error (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`AI endpoint error (${res.status}): ${text.slice(0, 200)}`);
   }
 
-  const json = (await res.json()) as Record<string, unknown>;
-  const responseText = config.parseResponse(json).slice(0, 4000);
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    model?: string;
+  };
 
-  return { responseText, model: config.model, latencyMs };
+  const responseText =
+    (json.choices?.[0]?.message?.content || '').slice(0, 4000);
+
+  return {
+    responseText,
+    model: json.model || config.model,
+    latencyMs,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -270,34 +177,22 @@ export function analyzeResponse(
 }
 
 // ---------------------------------------------------------------------------
-// Orchestrator — run a full mention check across all platforms and prompts
+// Orchestrator — run a full mention check
 // ---------------------------------------------------------------------------
 
 interface ConfigRow {
-  openai_api_key: string | null;
-  anthropic_api_key: string | null;
-  google_api_key: string | null;
-  perplexity_api_key: string | null;
+  ai_endpoint_url: string | null;
+  ai_api_key: string | null;
+  ai_model: string | null;
   brand_name: string;
   brand_aliases: string; // JSON stringified string[]
   brand_url: string | null;
   competitors: string; // JSON stringified { name: string }[]
-  platforms: string; // JSON stringified Platform[]
 }
 
 interface PromptRow {
   id: string;
   prompt_text: string;
-}
-
-function getApiKey(config: ConfigRow, platform: Platform): string | null {
-  const keyMap: Record<Platform, string | null> = {
-    openai: config.openai_api_key,
-    anthropic: config.anthropic_api_key,
-    google: config.google_api_key,
-    perplexity: config.perplexity_api_key,
-  };
-  return keyMap[platform];
 }
 
 interface DbHandle {
@@ -312,72 +207,80 @@ export async function runMentionCheck(
   checkId: string,
   projectId: string
 ): Promise<void> {
-  const platforms: Platform[] = JSON.parse(config.platforms);
   const brandAliases: string[] = JSON.parse(config.brand_aliases);
   const competitors: { name: string }[] = JSON.parse(config.competitors);
 
-  const activePlatforms = platforms.filter((p) => getApiKey(config, p));
+  if (!config.ai_endpoint_url || !config.ai_api_key || !config.ai_model) {
+    await db.updateCheck(checkId, {
+      status: 'failed',
+      summary: 'AI endpoint not configured. Set endpoint URL, API key, and model in settings.',
+      completed_at: new Date().toISOString(),
+    });
+    return;
+  }
+
+  const endpointConfig: AiEndpointConfig = {
+    endpointUrl: config.ai_endpoint_url,
+    apiKey: config.ai_api_key,
+    model: config.ai_model,
+  };
+
   let completedQueries = 0;
   let mentionCount = 0;
   let totalQueries = 0;
 
   try {
     for (const prompt of prompts) {
-      const platformPromises = activePlatforms.map(async (platform) => {
-        const apiKey = getApiKey(config, platform)!;
-        try {
-          const response = await queryPlatform(platform, apiKey, prompt.prompt_text);
-          const analysis = analyzeResponse(
-            response.responseText,
-            config.brand_name,
-            brandAliases,
-            config.brand_url,
-            competitors
-          );
+      try {
+        const response = await queryEndpoint(endpointConfig, prompt.prompt_text);
+        const analysis = analyzeResponse(
+          response.responseText,
+          config.brand_name,
+          brandAliases,
+          config.brand_url,
+          competitors
+        );
 
-          await db.createResult({
-            id: crypto.randomUUID(),
-            check_id: checkId,
-            project_id: projectId,
-            prompt_id: prompt.id,
-            platform,
-            model: response.model,
-            response_text: response.responseText,
-            brand_mentioned: analysis.brand_mentioned,
-            brand_sentiment: analysis.brand_sentiment,
-            brand_position: analysis.brand_position,
-            competitors_mentioned: JSON.stringify(analysis.competitors_mentioned),
-            citations: JSON.stringify(analysis.citations),
-            brand_cited: analysis.brand_cited,
-            latency_ms: response.latencyMs,
-          });
+        await db.createResult({
+          id: crypto.randomUUID(),
+          check_id: checkId,
+          project_id: projectId,
+          prompt_id: prompt.id,
+          platform: 'custom',
+          model: response.model,
+          response_text: response.responseText,
+          brand_mentioned: analysis.brand_mentioned,
+          brand_sentiment: analysis.brand_sentiment,
+          brand_position: analysis.brand_position,
+          competitors_mentioned: JSON.stringify(analysis.competitors_mentioned),
+          citations: JSON.stringify(analysis.citations),
+          brand_cited: analysis.brand_cited,
+          latency_ms: response.latencyMs,
+        });
 
-          if (analysis.brand_mentioned) mentionCount++;
-          totalQueries++;
-        } catch (err) {
-          await db.createResult({
-            id: crypto.randomUUID(),
-            check_id: checkId,
-            project_id: projectId,
-            prompt_id: prompt.id,
-            platform,
-            model: PLATFORM_CONFIGS[platform].model,
-            response_text: `Error: ${(err as Error).message}`,
-            brand_mentioned: false,
-            brand_sentiment: null,
-            brand_position: null,
-            competitors_mentioned: '[]',
-            citations: '[]',
-            brand_cited: false,
-            latency_ms: null,
-          });
-          totalQueries++;
-        }
-      });
+        if (analysis.brand_mentioned) mentionCount++;
+        totalQueries++;
+      } catch (err) {
+        await db.createResult({
+          id: crypto.randomUUID(),
+          check_id: checkId,
+          project_id: projectId,
+          prompt_id: prompt.id,
+          platform: 'custom',
+          model: endpointConfig.model,
+          response_text: `Error: ${(err as Error).message}`,
+          brand_mentioned: false,
+          brand_sentiment: null,
+          brand_position: null,
+          competitors_mentioned: '[]',
+          citations: '[]',
+          brand_cited: false,
+          latency_ms: null,
+        });
+        totalQueries++;
+      }
 
-      const results = await Promise.allSettled(platformPromises);
-      completedQueries += results.length;
-
+      completedQueries++;
       await db.updateCheck(checkId, { completed_queries: completedQueries });
     }
 

@@ -23,6 +23,9 @@ export interface BrandConfigRow {
   anthropic_api_key: string | null;
   google_api_key: string | null;
   perplexity_api_key: string | null;
+  ai_endpoint_url: string | null;
+  ai_api_key: string | null;
+  ai_model: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -85,6 +88,9 @@ export interface DatabaseSchema {
     anthropic_api_key?: string;
     google_api_key?: string;
     perplexity_api_key?: string;
+    ai_endpoint_url?: string;
+    ai_api_key?: string;
+    ai_model?: string;
   }): Promise<BrandConfigRecord>;
 
   getBrandConfig(projectId: string): Promise<BrandConfigRow | null>;

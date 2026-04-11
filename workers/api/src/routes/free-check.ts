@@ -2,12 +2,11 @@ import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { getDb } from '../db';
 import { crawlSite, generatePrompts } from '../lib/site-crawler';
-import { queryPlatform, analyzeResponse } from '../lib/ai-engine';
-import type { Platform } from '../lib/ai-engine';
+import { queryEndpoint, analyzeResponse } from '../lib/ai-engine';
+import type { AiEndpointConfig } from '../lib/ai-engine';
 
 const freeCheck = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const FREE_CHECK_PLATFORMS: Platform[] = ['openai', 'google']; // cheapest 2
 const RATE_LIMIT_PER_HOUR = 3;
 
 // POST / — trigger a free brand check
@@ -23,6 +22,17 @@ freeCheck.post('/', async (c) => {
   if (recentCount >= RATE_LIMIT_PER_HOUR) {
     return c.json({ error: 'Rate limit exceeded. Try again in an hour.' }, 429);
   }
+
+  // Build endpoint config from env vars
+  const endpointUrl = (c.env as any).FREE_AI_ENDPOINT_URL as string | undefined;
+  const apiKey = (c.env as any).FREE_AI_API_KEY as string | undefined;
+  const model = (c.env as any).FREE_AI_MODEL as string | undefined;
+
+  if (!endpointUrl || !apiKey || !model) {
+    return c.json({ error: 'Free check is temporarily unavailable' }, 503);
+  }
+
+  const endpointConfig: AiEndpointConfig = { endpointUrl, apiKey, model };
 
   // Crawl site
   let siteInfo;
@@ -48,45 +58,33 @@ freeCheck.post('/', async (c) => {
     let mentions = 0;
     let total = 0;
 
-    // We use env vars for API keys (our cost)
-    const apiKeys: Record<Platform, string | undefined> = {
-      openai: (c.env as any).OPENAI_API_KEY,
-      google: (c.env as any).GOOGLE_API_KEY,
-      anthropic: undefined,
-      perplexity: undefined,
-    };
-
-    const activePlatforms = FREE_CHECK_PLATFORMS.filter(p => apiKeys[p]);
-
     for (const promptText of prompts) {
-      for (const platform of activePlatforms) {
-        try {
-          const response = await queryPlatform(platform, apiKeys[platform]!, promptText);
-          const analysis = analyzeResponse(
-            response.responseText,
-            siteInfo.brand_name,
-            [],
-            body.domain,
-            []
-          );
+      try {
+        const response = await queryEndpoint(endpointConfig, promptText);
+        const analysis = analyzeResponse(
+          response.responseText,
+          siteInfo.brand_name,
+          [],
+          body.domain,
+          []
+        );
 
-          results.push({
-            prompt: promptText,
-            platform,
-            model: response.model,
-            brand_mentioned: analysis.brand_mentioned,
-            brand_sentiment: analysis.brand_sentiment,
-            brand_position: analysis.brand_position,
-            brand_cited: analysis.brand_cited,
-            response_preview: response.responseText.slice(0, 500),
-            latency_ms: response.latencyMs,
-          });
+        results.push({
+          prompt: promptText,
+          platform: 'custom',
+          model: response.model,
+          brand_mentioned: analysis.brand_mentioned,
+          brand_sentiment: analysis.brand_sentiment,
+          brand_position: analysis.brand_position,
+          brand_cited: analysis.brand_cited,
+          response_preview: response.responseText.slice(0, 500),
+          latency_ms: response.latencyMs,
+        });
 
-          if (analysis.brand_mentioned) mentions++;
-          total++;
-        } catch {
-          total++;
-        }
+        if (analysis.brand_mentioned) mentions++;
+        total++;
+      } catch {
+        total++;
       }
     }
 

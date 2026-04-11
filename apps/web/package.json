@@ -12,11 +12,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.41",
     "@auth/core": "^0.37.0",
     "@mentionpilot/shared": "workspace:*",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
+    "@saas-maker/ai": "file:/Users/sarthakagrawal/Desktop/saas-maker/packages/ai",
+    "ai": "^6.0.158",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

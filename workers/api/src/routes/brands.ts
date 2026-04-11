@@ -23,6 +23,9 @@ function toConfigRecord(row: any): BrandConfigRecord {
     has_anthropic_key: !!row.anthropic_api_key,
     has_google_key: !!row.google_api_key,
     has_perplexity_key: !!row.perplexity_api_key,
+    ai_endpoint_url: row.ai_endpoint_url || null,
+    has_ai_api_key: !!row.ai_api_key,
+    ai_model: row.ai_model || null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -65,6 +68,9 @@ brands.post('/:projectId/config', async (c) => {
     anthropic_api_key: body.anthropic_api_key || null,
     google_api_key: body.google_api_key || null,
     perplexity_api_key: body.perplexity_api_key || null,
+    ai_endpoint_url: body.ai_endpoint_url || null,
+    ai_api_key: body.ai_api_key || null,
+    ai_model: body.ai_model || null,
   });
 
   return c.json(toConfigRecord(row));

@@ -19,7 +19,6 @@ import { projects } from './routes/projects';
 import { badge } from './routes/badge';
 import { getDb } from './db';
 import { runMentionCheck } from './lib/ai-engine';
-import type { Platform } from './lib/ai-engine';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -106,24 +105,16 @@ export default {
 async function runScheduledCheck(
   db: ReturnType<typeof getDb>,
   project: Record<string, any>,
-  env: Bindings
+  _env: Bindings
 ) {
   try {
     const promptList = await db.listPrompts(project.id);
     if (promptList.length === 0) return;
 
-    const platforms: Platform[] = JSON.parse(project.platforms || '[]');
-    const keyMap: Record<string, string | null> = {
-      openai: project.openai_api_key,
-      anthropic: project.anthropic_api_key,
-      google: project.google_api_key,
-      perplexity: project.perplexity_api_key,
-    };
-    const activePlatforms = platforms.filter((p) => !!keyMap[p]);
-    if (activePlatforms.length === 0) return;
+    if (!project.ai_endpoint_url || !project.ai_api_key || !project.ai_model) return;
 
     const checkId = crypto.randomUUID();
-    const totalQueries = promptList.length * activePlatforms.length;
+    const totalQueries = promptList.length;
 
     await db.createCheck({
       id: checkId,
@@ -133,15 +124,13 @@ async function runScheduledCheck(
 
     // Build a config object matching what runMentionCheck expects
     const config = {
-      openai_api_key: project.openai_api_key,
-      anthropic_api_key: project.anthropic_api_key,
-      google_api_key: project.google_api_key,
-      perplexity_api_key: project.perplexity_api_key,
+      ai_endpoint_url: project.ai_endpoint_url,
+      ai_api_key: project.ai_api_key,
+      ai_model: project.ai_model,
       brand_name: project.brand_name,
       brand_aliases: project.brand_aliases,
       brand_url: project.brand_url,
       competitors: project.competitors,
-      platforms: project.platforms,
     };
 
     await runMentionCheck(db, config, promptList, checkId, project.id);
