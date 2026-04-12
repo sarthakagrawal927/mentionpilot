@@ -1,6 +1,6 @@
 // ─── Platforms ───────────────────────────────────────────────
 
-export type AIPlatform = 'openai' | 'anthropic' | 'google' | 'perplexity';
+export type AIPlatform = 'openai' | 'anthropic' | 'google' | 'perplexity' | 'custom';
 export type Sentiment = 'positive' | 'neutral' | 'negative';
 
 // ─── Records ────────────────────────────────────────────────
@@ -39,6 +39,9 @@ export interface BrandConfigRecord {
   has_anthropic_key: boolean;
   has_google_key: boolean;
   has_perplexity_key: boolean;
+  ai_endpoint_url: string | null;
+  has_ai_api_key: boolean;
+  ai_model: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +102,9 @@ export interface CreateBrandConfigRequest {
   anthropic_api_key?: string;
   google_api_key?: string;
   perplexity_api_key?: string;
+  ai_endpoint_url?: string;
+  ai_api_key?: string;
+  ai_model?: string;
 }
 
 export interface UpdateBrandConfigRequest extends Partial<CreateBrandConfigRequest> {}

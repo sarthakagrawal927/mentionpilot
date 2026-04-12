@@ -10,8 +10,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "hono": "^4.7.0",
-    "@mentionpilot/shared": "workspace:*"
+    "@mentionpilot/shared": "workspace:*",
+    "@saas-maker/ai": "file:/Users/sarthakagrawal/Desktop/saas-maker/packages/ai",
+    "hono": "^4.7.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250214.0",
