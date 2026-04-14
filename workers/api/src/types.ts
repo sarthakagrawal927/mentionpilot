@@ -11,5 +11,6 @@ export interface Bindings {
 
 export interface Variables {
   userId?: string;
+  authMethod?: 'session' | 'api_key';
   requestId: string;
 }

@@ -393,5 +393,56 @@ export function getDb(d1: D1Database) {
       ).bind(projectId, directorySlug).run();
       return (meta.changes ?? 0) > 0;
     },
+
+    // --- API Keys ---
+    async createApiKey(input: {
+      id: string;
+      user_id: string;
+      name: string;
+      key_hash: string;
+      key_prefix: string;
+      scopes: string[];
+      expires_at: string | null;
+    }) {
+      await d1.prepare(
+        `INSERT INTO api_keys (id, user_id, name, key_hash, key_prefix, scopes, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        input.id, input.user_id, input.name, input.key_hash,
+        input.key_prefix, JSON.stringify(input.scopes), input.expires_at
+      ).run();
+      return await d1.prepare(`SELECT * FROM api_keys WHERE id = ?`).bind(input.id).first() as any;
+    },
+
+    async getApiKeyByHash(keyHash: string) {
+      return await d1.prepare(
+        `SELECT * FROM api_keys
+         WHERE key_hash = ?
+           AND revoked_at IS NULL
+           AND (expires_at IS NULL OR expires_at > datetime('now'))`
+      ).bind(keyHash).first() as { id: string; user_id: string; scopes: string } | null;
+    },
+
+    async listApiKeysByUser(userId: string) {
+      const { results } = await d1.prepare(
+        `SELECT id, name, key_prefix, scopes, last_used_at, expires_at, revoked_at, created_at
+         FROM api_keys WHERE user_id = ? ORDER BY created_at DESC`
+      ).bind(userId).all();
+      return results as any[];
+    },
+
+    async touchApiKeyUsed(id: string) {
+      await d1.prepare(
+        `UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?`
+      ).bind(id).run();
+    },
+
+    async revokeApiKey(id: string, userId: string) {
+      const { meta } = await d1.prepare(
+        `UPDATE api_keys SET revoked_at = datetime('now')
+         WHERE id = ? AND user_id = ? AND revoked_at IS NULL`
+      ).bind(id, userId).run();
+      return (meta.changes ?? 0) > 0;
+    },
   };
 }
