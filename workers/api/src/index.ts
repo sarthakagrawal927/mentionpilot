@@ -22,14 +22,36 @@ import { runMentionCheck } from './lib/ai-engine';
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// CORS — allow requesting origin, support credentials
-app.use(
-  '*',
-  cors({
-    origin: (origin) => origin,
+// CORS allowlist for authenticated routes (dashboard calls from our own web).
+const CORS_ALLOWED_ORIGINS = [
+  'https://mentionpilot-web.vercel.app',
+  'https://mentionpilot.com',
+  'https://www.mentionpilot.com',
+];
+const VERCEL_PREVIEW_RE = /^https:\/\/mentionpilot-web-[a-z0-9-]+\.vercel\.app$/;
+const LOCALHOST_RE = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+// Public routes that need open CORS (embedded widgets, free tools, SEO pages).
+const PUBLIC_CORS_PATHS = ['/v1/badge', '/v1/public', '/v1/free-check', '/v1/geo'];
+
+// Permissive CORS for embed/public endpoints — callable from any origin.
+app.use('*', async (c, next) => {
+  const path = c.req.path;
+  const isPublic = path === '/health' || PUBLIC_CORS_PATHS.some((p) => path.startsWith(p));
+  if (isPublic) {
+    return cors({ origin: '*', credentials: false })(c, next);
+  }
+  return cors({
+    origin: (origin) => {
+      if (!origin) return origin;
+      if (CORS_ALLOWED_ORIGINS.includes(origin)) return origin;
+      if (VERCEL_PREVIEW_RE.test(origin)) return origin;
+      if (LOCALHOST_RE.test(origin)) return origin;
+      return null;
+    },
     credentials: true,
-  })
-);
+  })(c, next);
+});
 
 // Request ID middleware
 app.use('*', async (c, next) => {

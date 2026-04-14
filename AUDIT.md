@@ -35,8 +35,8 @@ Audit date: 2026-03-29
 
 ## LOW / INFORMATIONAL
 
-- [ ] **CORS reflects any origin** `workers/api/src/index.ts:26-30`
-  `origin: (origin) => origin` reflects the requesting origin. This is acceptable for a public API with bearer-token auth (no cookie auth), but should be locked to known origins in production.
+- [x] **CORS reflects any origin** `workers/api/src/index.ts:26-30`
+  Locked CORS to allowlist (production + vercel previews + localhost) for authenticated routes. Public embed/SEO routes (`/v1/badge`, `/v1/public`, `/v1/free-check`, `/v1/geo`, `/health`) keep `origin: '*'` so widgets and tools work cross-origin.
 
 - [ ] **No .env files committed** -- Verified clean. `.env` is in `.gitignore:6`. `.env.example` files exist at root and `apps/web/`.
 
