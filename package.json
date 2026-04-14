@@ -4,6 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
+    "husky": "^9.1.7",
     "next": "^15.1.0"
   },
   "scripts": {
@@ -13,6 +14,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "prepare": "husky"
   }
 }
