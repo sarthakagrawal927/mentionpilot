@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProject } from "@/lib/use-project";
 import { apiFetch } from "@/lib/api-client";
+import { ApiKeysCard } from "@/components/api-keys-card";
 
 const WIDGET_BASE = process.env.NEXT_PUBLIC_API_URL || "https://mentionpilot-api.sarthakagrawal927.workers.dev";
 
@@ -282,6 +283,9 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* API Keys */}
+      <ApiKeysCard />
 
       {/* Danger Zone */}
       <Card className="border-destructive/50">
