@@ -1,46 +1,74 @@
-# MentionPilot
+# agents.md — mentionpilot
 
-AI visibility platform for startups. Track, optimize, and improve how AI assistants (ChatGPT, Claude, Gemini, Perplexity) talk about your product.
+## Purpose
+Brand mention monitoring for AI assistants — tracks how ChatGPT, Claude, Gemini, Perplexity reference brands, with GEO optimization tools, social monitoring, and an embeddable badge widget.
 
-## Vision
+## Stack
+- Framework: Next.js 16 (App Router, Turbopack) — `apps/web`; Hono CF Worker — `workers/api`
+- Language: TypeScript
+- Styling: Tailwind CSS v4
+- DB: Cloudflare D1 (SQLite) + Drizzle — schema in `packages/db`
+- Auth: NextAuth v5 beta (Google OAuth)
+- Testing: Playwright (e2e, `apps/web`), Vitest (`workers/api`)
+- Deploy: Vercel (web) + Cloudflare Workers (API)
+- Package manager: pnpm workspace
 
-The affordable, self-serve AI visibility platform that the startup market is missing. Combines AI mention monitoring, GEO optimization, social monitoring, and an AXP-style shadow site — all in one product at startup-friendly pricing.
+## Repo structure
+```
+apps/
+  web/                 # Next.js frontend
+    src/               # App source
+    content/           # MDX content (Velite)
+    e2e/               # Playwright tests
+    velite.config.ts   # MDX content processing
+    next.config.ts     # Next.js config
+packages/
+  db/                  # Shared D1 schema + migrations
+    src/index.ts       # Schema exports + query helpers
+    migrations/        # SQL migration files (referenced by wrangler.toml)
+  shared/              # Types + utilities shared by web and api
+  badge-widget/        # Self-contained embeddable badge (standalone Vite build)
+    src/               # Widget source
+    dist/              # Built output (publish artifact)
+    build.ts           # Custom build script
+workers/
+  api/                 # Cloudflare Worker (Hono)
+    src/
+      index.ts         # Entry, route registration
+      routes/          # Route handlers
+      middleware/      # Auth + rate-limit
+      __tests__/       # Vitest unit tests
+    wrangler.toml      # D1 binding, cron @ 06:00 UTC daily
+scripts/
+  build-badge.sh       # Build + publish badge-widget
+plans/                 # Implementation plans (archive old before updating)
+```
 
-## Architecture
+## Key commands
+```bash
+pnpm dev            # All packages in parallel (web + wrangler dev)
+pnpm dev:web        # Next.js only
+pnpm dev:api        # CF Worker only (wrangler dev)
+pnpm build          # Build all packages
+pnpm test           # All tests
+pnpm typecheck      # TS check across workspace
+pnpm lint           # Lint across workspace
 
-- **Framework**: Next.js 15 (app router)
-- **Styling**: Tailwind CSS
-- **Database**: Cloudflare D1 (SQLite)
-- **API**: Cloudflare Workers + Hono
-- **Auth**: Auth.js with Google OAuth
-- **Deployment**: Cloudflare (API) + Vercel (dashboard)
-- **Runtime**: Bun preferred
-- **Monorepo**: pnpm workspaces
-- **Testing**: Vitest + Playwright
+# Deploy API
+cd workers/api && pnpm deploy   # wrangler deploy
 
-## Key Principles
+# Badge widget
+bash scripts/build-badge.sh
+```
 
-- BYOK (Bring Your Own Keys) for AI platform queries — zero cost to us
-- Self-serve, no sales team required
-- Free tier that provides instant value (free AI brand check, GEO score checker)
-- Startup-friendly pricing ($9-29/mo)
-- Feature parity with $300+/mo tools at 1/10th the price
+## Architecture notes
+- **pnpm workspace monorepo**: `apps/*`, `packages/*`, `workers/*`.
+- **D1 migrations** in `packages/db/migrations/`; `wrangler.toml` points there via `migrations_dir`.
+- **Daily cron**: Worker checks AI mentions at 06:00 UTC and stores results in D1.
+- **AI provider config**: `FREE_AI_ENDPOINT_URL`, `FREE_AI_API_KEY`, `FREE_AI_MODEL` set in CF dashboard — never hardcoded.
+- **Badge widget**: self-contained Vite build, `dist/` is the publish artifact. Embeddable "mentioned by AI" badge for customers.
+- **Velite**: used in `apps/web` for MDX content processing (blog/docs).
+- **IMPORTANT**: `@saas-maker/ai` is referenced via local file path (`/Users/sarthakagrawal/Desktop/saas-maker/packages/ai`) — will break on other machines.
+- Pre-push hook via Husky.
 
-## Competitive Landscape
-
-- Peec AI ($103+/mo, $29M raised) — monitoring only, enterprise
-- Profound ($499+/mo, $20M raised) — agent analytics, enterprise
-- Scrunch AI ($250+/mo, $19M raised) — AXP shadow site, enterprise
-- Gauge ($100-599/mo, YC S24) — monitoring + content creation
-- Otterly ($29+/mo) — GEO audit, cheapest paid option
-- Nightwatch ($32/mo) — hybrid SEO + AI monitoring
-- Frase ($49/mo) — content platform with AI tracking
-- Trakkr (free tier) — programmatic SEO, basic free monitoring
-
-## Differentiation
-
-1. Combined AI + social monitoring in one product (nobody does this)
-2. AXP shadow site at startup pricing (Scrunch charges $250+/mo)
-3. Free instant brand check (no signup required)
-4. BYOK model keeps our costs near zero
-5. GEO optimization tools included (Gauge charges $599/mo for this)
+## Active context
