@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { trace } from '@saas-maker/ops';
 import type { Bindings, Variables } from '../types';
 import { requireSession, verifyProjectOwnership } from '../middleware/auth';
 import { runMentionCheck } from '../lib/ai-engine';
@@ -54,7 +55,7 @@ checks.get('/:projectId', async (c) => {
   const result = await verifyProjectOwnership(c, c.req.param('projectId'));
   if (!result) return c.json({ error: 'Forbidden' }, 403);
 
-  const list = await result.db.listChecks(result.project.id);
+  const list = await trace('db:listChecks', () => result.db.listChecks(result.project.id), { project: result.project.id });
   return c.json(list);
 });
 

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { configurePostHog, trace, flushPostHog } from '@saas-maker/ops';
 import type { Bindings, Variables } from './types';
 import { auth } from './routes/auth';
 import { brands } from './routes/brands';
@@ -57,6 +58,17 @@ app.use('*', async (c, next) => {
 app.use('*', async (c, next) => {
   c.set('requestId', crypto.randomUUID());
   await next();
+});
+
+// PostHog tracing middleware
+let phConfigured = false;
+app.use('*', async (c, next) => {
+  if (!phConfigured && c.env.POSTHOG_API_KEY) {
+    configurePostHog(c.env.POSTHOG_API_KEY, 'https://us.i.posthog.com');
+    phConfigured = true;
+  }
+  await next();
+  if (c.env.POSTHOG_API_KEY) c.executionCtx.waitUntil(flushPostHog());
 });
 
 // Health check

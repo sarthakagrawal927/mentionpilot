@@ -7,6 +7,7 @@ export interface Bindings {
   FREE_AI_ENDPOINT_URL?: string;
   FREE_AI_API_KEY?: string;
   FREE_AI_MODEL?: string;
+  POSTHOG_API_KEY?: string;
 }
 
 export interface Variables {
