@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: { unoptimized: true },
+  serverExternalPackages: ["velite"],
   webpack: (config) => {
     config.plugins.push(new VeliteWebpackPlugin());
     return config;
