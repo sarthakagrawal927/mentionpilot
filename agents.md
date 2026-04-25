@@ -71,4 +71,24 @@ bash scripts/build-badge.sh
 - **IMPORTANT**: `@saas-maker/ai` is referenced via local file path (`/Users/sarthakagrawal/Desktop/saas-maker/packages/ai`) — will break on other machines.
 - Pre-push hook via Husky.
 
+## Idea Backlog — LLM SEO extension (source: `~/Desktop/reference/saas-ideas/README.md` line 85)
+
+### Scope: `llms.txt` advisor + LLM-SEO planner
+- Generate `llms.txt` for client sites — prioritize what LLM crawlers should see
+- Score how well the site is indexed across ChatGPT/Claude/Gemini/Perplexity (existing mention pipeline already does this)
+- Suggest concrete fixes — canonical pages to expose, structured summaries, FAQ blocks, schema markup
+- Diff scans week-over-week → recurring revenue surface
+
+### How it complements current brand-mention monitor
+- Mention monitor = OUTPUT: am I cited by LLMs?
+- `llms.txt` advisor = INPUT: what does the LLM see when it crawls?
+- Reuse: existing crawl infra, AI provider config, D1 schema (extend with `site_audits`, `llms_txt_versions`)
+- Same buyer, additive ARPU
+
+### Build order
+1. `llms.txt` generator from site crawl (sitemap + content classification)
+2. Audit report: missing canonical summaries, weak FAQ coverage, broken structured data
+3. Recurring scan + diff dashboard
+4. Bundle with existing badge widget — "AI-Optimized" trust signal
+
 ## Active context

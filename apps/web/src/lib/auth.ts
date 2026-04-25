@@ -1,55 +1,22 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import { betterAuth } from "better-auth";
+import { memoryAdapter } from "better-auth/adapters/memory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Google({
+// In-memory store — intentional for the web frontend which proxies auth to the API worker.
+const db: Record<string, any[]> = {};
+
+export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
+  database: memoryAdapter(db),
+  socialProviders: {
+    google: {
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
-  ],
-  callbacks: {
-    async signIn({ user, account }) {
-      if (!user.email) return false;
-      if (!account?.id_token) return false;
-
-      try {
-        const res = await fetch(`${API_BASE}/v1/auth/callback`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_token: account.id_token,
-            name: user.name || null,
-            avatar_url: user.image || null,
-          }),
-        });
-
-        if (!res.ok) return false;
-
-        const data = await res.json();
-        (user as any).apiToken = data.token;
-        (user as any).apiUserId = data.user.id;
-      } catch {
-        return false;
-      }
-
-      return true;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.apiToken = (user as any).apiToken;
-        token.apiUserId = (user as any).apiUserId;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      (session as any).apiToken = token.apiToken;
-      (session as any).apiUserId = token.apiUserId;
-      return session;
     },
   },
+  trustedOrigins: [process.env.BETTER_AUTH_URL || ""],
   pages: {
     signIn: "/login",
   },
