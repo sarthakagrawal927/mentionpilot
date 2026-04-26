@@ -1,6 +1,9 @@
 .vercel
 .velite
 .open-next
+.cf-pages-bundle
+.cf-pages-out
+.pages-deploy
 playwright-report
 test-results
 out
