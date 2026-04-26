@@ -323,13 +323,11 @@ cd workers/api && wrangler d1 migrations apply mentionpilot-db --remote
 
 1. **Google OAuth not configured** — Needs credentials from Google Cloud Console + env vars on Cloudflare Pages.
 2. **Free brand check API keys not set** — OPENAI_API_KEY and GOOGLE_API_KEY need to be set in Cloudflare Workers dashboard for the public free check to work.
-3. **Dashboard pages use hardcoded `projectId = "demo"`** — Need to implement project creation flow and route projects by slug/ID from the session.
-4. **API keys, teams, multi-brand are placeholders** — Routes exist but return 501.
-5. **No email/Slack alert system** — Settings page has the UI but no backend implementation.
-6. **Leaderboard data is empty** — `/v1/public/leaderboard/:category` returns structure but no real rankings (needs aggregated check data).
-7. **Client-side pages still use `DEMO_TOKEN = ""` in some places** — Should use the `api-client.ts` helper with `getToken()` instead.
-8. **Content Gap Analysis (P3.5)** — Listed in roadmap but not implemented.
-9. **better-auth uses memoryAdapter** — Per `apps/web/src/lib/auth.ts`, the in-memory adapter resets on worker restart. The web frontend treats the API as the source of truth for sessions, so this is intentional but limits any auth state living only on the web.
+3. **Teams + multi-brand are placeholders** — Routes exist but are stubs.
+4. **No email/Slack alert system** — Settings page has the UI but no backend implementation.
+5. **Leaderboard data is empty** — `/v1/public/leaderboard/:category` returns structure but no real rankings (needs aggregated check data).
+6. **Content Gap Analysis (P3.5)** — Listed in roadmap but not implemented.
+7. **better-auth uses memoryAdapter** — Per `apps/web/src/lib/auth.ts`, the in-memory adapter resets on worker restart. The web frontend treats the API as the source of truth for sessions, so this is intentional but limits any auth state living only on the web.
 
 ---
 
