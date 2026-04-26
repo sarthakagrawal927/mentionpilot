@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+export const dynamic = "force-dynamic";
 import {
   LayoutDashboard,
   Search,
@@ -33,6 +35,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) redirect("/login");
 
@@ -81,7 +84,8 @@ export default async function DashboardLayout({
           <form
             action={async () => {
               "use server";
-              await auth.api.signOut({ headers: await headers() });
+              const a = await getAuth();
+              await a.api.signOut({ headers: await headers() });
               redirect("/");
             }}
           >

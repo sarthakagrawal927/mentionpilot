@@ -3,7 +3,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 export async function getToken(): Promise<string> {
   const res = await fetch("/api/token");
   if (!res.ok) throw new Error("Not authenticated");
-  const data = await res.json();
+  const data = (await res.json()) as { token: string };
   return data.token;
 }
 

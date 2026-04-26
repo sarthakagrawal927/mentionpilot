@@ -7,3 +7,8 @@ assets = { directory = ".open-next/assets" }
 [vars]
 NODE_ENV = "production"
 NEXTAUTH_URL = "https://mentionpilot-web.sarthakagrawal927.workers.dev"
+
+[[d1_databases]]
+binding = "AUTH_DB"
+database_name = "mentionpilot-auth"
+database_id = "1b55ebb6-f563-4e0e-9cb4-ca0bff078fbe"

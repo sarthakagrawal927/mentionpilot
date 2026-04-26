@@ -47,22 +47,22 @@ export default function FreeCheckPage() {
 
       if (!startRes.ok) {
         const err = await startRes.json();
-        throw new Error(err.error || "Check failed");
+        throw new Error((err as Record<string, string>).error || "Check failed");
       }
 
-      const { id, brand_name } = await startRes.json();
-      setBrandName(brand_name);
+      const startData = (await startRes.json()) as { id: string; brand_name: string };
+      setBrandName(startData.brand_name);
 
       let completed = false;
       while (!completed) {
         await new Promise((r) => setTimeout(r, 2000));
-        const pollRes = await fetch(`${API_BASE}/v1/free-check/${id}`);
-        const data = await pollRes.json();
+        const pollRes = await fetch(`${API_BASE}/v1/free-check/${startData.id}`);
+        const data = (await pollRes.json()) as { status: string; results?: any[]; mention_rate?: number };
 
         if (data.status !== "running") {
           completed = true;
           setResults(data.results || []);
-          setMentionRate(data.mention_rate);
+          setMentionRate(data.mention_rate ?? null);
         }
       }
     } catch (err) {
