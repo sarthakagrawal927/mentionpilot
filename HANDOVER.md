@@ -112,8 +112,13 @@ mentionpilot/
 
 ## Database
 
-**D1 Database:** `mentionpilot-db`
-**Database ID:** `628e1584-aa4a-4181-96ad-3fd234c88498`
+Two D1 databases:
+
+| Binding | Database | Purpose | Schema source |
+|---------|----------|---------|---------------|
+| `DB` (in `workers/api`) | `mentionpilot-db` (`628e1584-aa4a-4181-96ad-3fd234c88498`) | App data (projects, prompts, checks, etc.) | `packages/db/migrations/*.sql` |
+| `AUTH_DB` (in `apps/web`) | `mentionpilot-auth` (`1b55ebb6-f563-4e0e-9cb4-ca0bff078fbe`) | better-auth tables (user, session, account, verification) | `apps/web/d1-schema.sql` |
+
 **Region:** WNAM (West North America)
 **Cloudflare Account:** `7d048325699a5acddb44d3be31cf6ba9`
 
