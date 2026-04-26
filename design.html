@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#00354a",
+                    "error": "#ffb4ab",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#2a1700",
+                    "on-primary-fixed-variant": "#004c69",
+                    "primary-fixed-dim": "#7bd0ff",
+                    "inverse-surface": "#e5e2e3",
+                    "outline-variant": "#3e484f",
+                    "secondary-fixed": "#c4e7ff",
+                    "tertiary-container": "#f1a02b",
+                    "on-tertiary": "#472a00",
+                    "inverse-primary": "#00668a",
+                    "on-surface": "#e5e2e3",
+                    "surface-bright": "#3a393a",
+                    "primary": "#8ed5ff",
+                    "outline": "#87929a",
+                    "secondary": "#a4cce6",
+                    "secondary-container": "#214b61",
+                    "background": "#131314",
+                    "inverse-on-surface": "#313031",
+                    "primary-container": "#38bdf8",
+                    "on-primary-container": "#004965",
+                    "surface-variant": "#353436",
+                    "on-secondary-fixed-variant": "#214b61",
+                    "tertiary-fixed-dim": "#ffb960",
+                    "surface-container-lowest": "#0e0e0f",
+                    "error-container": "#93000a",
+                    "on-primary-fixed": "#001e2c",
+                    "on-surface-variant": "#bdc8d1",
+                    "on-tertiary-fixed-variant": "#653e00",
+                    "surface-tint": "#7bd0ff",
+                    "surface-dim": "#131314",
+                    "primary-fixed": "#c4e7ff",
+                    "surface-container-low": "#1c1b1c",
+                    "surface-container-highest": "#353436",
+                    "on-secondary-container": "#92bad4",
+                    "on-background": "#e5e2e3",
+                    "on-error": "#690005",
+                    "secondary-fixed-dim": "#a4cce6",
+                    "on-secondary-fixed": "#001e2c",
+                    "surface-container": "#201f20",
+                    "surface": "#131314",
+                    "on-tertiary-container": "#613b00",
+                    "tertiary-fixed": "#ffddb8",
+                    "tertiary": "#ffc176",
+                    "surface-container-high": "#2a2a2b",
+                    "on-secondary": "#023449"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "display": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .signal-strip {
+            position: relative;
+        }
+        .signal-strip::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #38bdf8;
+        }
+        .glass-panel {
+            background: rgba(32, 31, 32, 0.7);
+            backdrop-filter: blur(16px);
+        }
+        body {
+            background-color: #131314;
+            color: #e5e2e3;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131314] dark:bg-[#0e0e0f] bg-[#1c1c1c]">
+<nav class="flex justify-between items-center px-6 py-4 max-w-full mx-auto font-['Space_Grotesk'] tracking-tight">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#38bdf8]" style="font-variation-settings: 'FILL' 1;">radar</span>
+<span class="text-xl font-bold tracking-tighter text-[#38bdf8]">MentionPilot</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-[#38bdf8] border-b-2 border-[#38bdf8] pb-1 hover:text-[#38bdf8] transition-colors duration-300" href="#">Live Stream</a>
+<a class="text-[#e5e2e3] opacity-70 hover:text-[#38bdf8] transition-colors duration-300" href="#">Analytics</a>
+<a class="text-[#e5e2e3] opacity-70 hover:text-[#38bdf8] transition-colors duration-300" href="#">Sources</a>
+<a class="text-[#e5e2e3] opacity-70 hover:text-[#38bdf8] transition-colors duration-300" href="#">API</a>
+</div>
+<button class="bg-primary-container text-on-primary-container px-5 py-2 font-bold text-sm tracking-tight active:scale-95 duration-150 rounded-DEFAULT">
+                Get Started
+            </button>
+</nav>
+</header>
+<main class="pt-24 space-y-24 pb-32">
+<!-- Hero Section -->
+<section class="px-6 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+<div class="flex-1 space-y-8">
+<div class="inline-flex items-center gap-2 bg-surface-container-high px-3 py-1 rounded-full border border-outline-variant/15">
+<span class="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-[0.15em] text-on-surface-variant">Live Instrumentation Active</span>
+</div>
+<h1 class="font-display text-5xl md:text-7xl font-bold leading-[0.95] tracking-tighter text-on-surface">
+                    Intercept Every <span class="text-primary italic">Signal</span> in Real-Time.
+                </h1>
+<p class="text-lg text-on-surface-variant max-w-xl leading-relaxed">
+                    A command center for global mentions. Track brand sentiment, emerging crises, and viral trends across technical and social frontiers with 100ms latency.
+                </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="bg-primary-container text-on-primary-container px-8 py-4 font-bold flex items-center gap-2 rounded-DEFAULT hover:shadow-[0_0_12px_rgba(56,189,248,0.4)] transition-all">
+                        Launch Dashboard <span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="bg-surface-container-highest text-primary px-8 py-4 font-bold rounded-DEFAULT hover:bg-surface-bright transition-all">
+                        View Documentation
+                    </button>
+</div>
+</div>
+<div class="flex-1 relative w-full aspect-square md:aspect-video bg-surface-container-low overflow-hidden rounded-lg border border-outline-variant/10">
+<div class="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent z-10"></div>
+<img class="w-full h-full object-cover grayscale opacity-60" data-alt="Technical dashboard interface showing digital data points and glowing connections on a dark sleek screen with blue accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq_mwtNKM9Yve5CbXcn--fxkkY51_k5clmTdbUGwWpQnAQpH07CLp8cd0qTzuNvBvcXHqAPcthVQMAIX_qAcTcKXBTmbinvppBYeee3_bNnMyATv7v1FmQH9Q41NP1jCUln9ZrUYyz33DF0xKPLqPLaO7UBJiz4lQpYxSvDRBDhWXCSoCP6H0fyY-x9_N-PfMCimTRQlao4pwj7762DVTtOiHyijPX2atPqwcszTafX8hnDjh2oH80tWoE-NxiStHQXJgABZmCR8AZ"/>
+<div class="absolute bottom-6 left-6 z-20 bg-surface-container-lowest/80 backdrop-blur-md p-4 border-l-2 border-primary">
+<p class="text-[10px] font-label font-bold uppercase tracking-widest text-primary mb-1">Latency</p>
+<p class="font-display text-2xl font-bold">142ms</p>
+</div>
+</div>
+</section>
+<!-- Global Pulse Feed & Sentiment Section (Bento Grid) -->
+<section class="px-6 max-w-7xl mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Mention Stream Panel -->
+<div class="lg:col-span-7 bg-surface-container-low p-1 rounded-lg">
+<div class="bg-surface-container-lowest p-6 flex justify-between items-center mb-1">
+<h2 class="font-display text-xl font-bold tracking-tight">Global Pulse Feed</h2>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">history</span> Tracking 14.2k/min
+                        </span>
+</div>
+<div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+<!-- Stream Item 1 -->
+<div class="signal-strip bg-surface-container-lowest hover:bg-surface-container-high transition-colors p-6 group">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">retweet</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">u/dev_insights</p>
+<p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">r/technology • 2m ago</p>
+</div>
+</div>
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold">POS</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                                "MentionPilot's new API documentation is incredibly thorough. Finally a tracking tool built for technical workflows rather than just marketing."
+                            </p>
+</div>
+<!-- Stream Item 2 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-6 group">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">alternate_email</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">@venture_cap</p>
+<p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">X.com • 8m ago</p>
+</div>
+</div>
+<span class="bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold">NEU</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                                Observing a significant spike in real-time intelligence adoption this quarter. $MPLT seems to be capturing the enterprise market.
+                            </p>
+</div>
+<!-- Stream Item 3 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-6 group">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3 items-center">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">news</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">TechChronicle</p>
+<p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">News • 15m ago</p>
+</div>
+</div>
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold">POS</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                                "Breakthrough in real-time data ingestion: MentionPilot reduces latency by 40% in latest infrastructure update."
+                            </p>
+</div>
+</div>
+</div>
+<!-- Sentiment & Config Cluster -->
+<div class="lg:col-span-5 flex flex-col gap-6">
+<!-- Sentiment Visualization -->
+<div class="bg-surface-container-low p-8 rounded-lg flex-1">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-display font-bold uppercase tracking-widest text-xs text-on-surface-variant">Sentiment Velocity</h3>
+<span class="text-primary text-xs font-bold font-label">24H RANGE</span>
+</div>
+<div class="h-48 flex items-end gap-2 mb-6">
+<div class="flex-1 bg-surface-container-highest h-[40%] hover:h-[45%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-primary">12%</div>
+</div>
+<div class="flex-1 bg-primary/20 h-[70%] hover:h-[75%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-primary">48%</div>
+</div>
+<div class="flex-1 bg-primary h-[90%] hover:h-[95%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-on-primary">82%</div>
+</div>
+<div class="flex-1 bg-primary/60 h-[50%] hover:h-[55%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-primary">31%</div>
+</div>
+<div class="flex-1 bg-error/30 h-[20%] hover:h-[25%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-error">9%</div>
+</div>
+<div class="flex-1 bg-primary/40 h-[65%] hover:h-[70%] transition-all relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block text-[10px] font-bold text-primary">42%</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4 border-t border-outline-variant/15 pt-6">
+<div>
+<p class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant mb-1">Positive</p>
+<p class="text-xl font-display font-bold text-primary">72.4%</p>
+</div>
+<div>
+<p class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant mb-1">Neutral</p>
+<p class="text-xl font-display font-bold text-on-surface">21.1%</p>
+</div>
+<div>
+<p class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant mb-1">Negative</p>
+<p class="text-xl font-display font-bold text-error">6.5%</p>
+</div>
+</div>
+</div>
+<!-- Source Configuration Panel -->
+<div class="bg-surface-container-low p-8 rounded-lg">
+<h3 class="font-display font-bold uppercase tracking-widest text-xs text-on-surface-variant mb-6">Source Configuration</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">terminal</span>
+<span class="text-sm font-medium">Twitter / X Stream</span>
+</div>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-on-primary-container rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center py-2 group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">forum</span>
+<span class="text-sm font-medium">Reddit Firehose</span>
+</div>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-on-primary-container rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center py-2 group opacity-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">public</span>
+<span class="text-sm font-medium">Global News Syndication</span>
+</div>
+<div class="w-10 h-5 bg-surface-container-highest rounded-full relative cursor-pointer">
+<div class="absolute left-1 top-1 w-3 h-3 bg-outline rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center py-2 group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">code</span>
+<span class="text-sm font-medium">GitHub Repositories</span>
+</div>
+<div class="w-10 h-5 bg-primary-container rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-on-primary-container rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-outline-variant/15">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-on-surface-variant">Active Pipelines</span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-primary">03 / 08</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Capabilities (Asymmetric Feature Section) -->
+<section class="px-6 max-w-7xl mx-auto py-12">
+<div class="flex flex-col md:flex-row gap-12 items-center">
+<div class="w-full md:w-1/3 bg-surface-container-low p-10 rounded-lg space-y-6">
+<span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">insights</span>
+<h3 class="font-display text-3xl font-bold tracking-tighter">Precision Intelligence</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                        Our engine doesn't just find text; it parses intent. Utilizing custom LLMs optimized for short-form telemetry, MentionPilot delivers a depth of understanding that traditional scrapers miss.
+                    </p>
+<a class="inline-flex items-center gap-2 text-primary text-xs font-bold font-label uppercase tracking-widest hover:gap-4 transition-all" href="#">
+                        Explore Technical Architecture <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="w-full md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-surface-container-lowest border border-outline-variant/10 p-8 hover:bg-surface-container-low transition-colors">
+<h4 class="font-display font-bold text-lg mb-2">Webhooks &amp; API</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Plug your tracking data directly into Slack, Discord, or custom internal dashboards with zero-config webhooks.</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/10 p-8 hover:bg-surface-container-low transition-colors">
+<h4 class="font-display font-bold text-lg mb-2">Anomaly Alerts</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Automatic detection of unusual spikes in mention volume, protecting your brand from silent escalations.</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/10 p-8 hover:bg-surface-container-low transition-colors">
+<h4 class="font-display font-bold text-lg mb-2">Historical Backfill</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Need context? Backfill your data up to 24 months instantly to compare current signals with historical benchmarks.</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/10 p-8 hover:bg-surface-container-low transition-colors">
+<h4 class="font-display font-bold text-lg mb-2">Multi-Org Support</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Manage multiple brands, products, or clients from a single unified workspace with siloed security.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA / Signature Pulse -->
+<section class="px-6 max-w-5xl mx-auto text-center py-24 border-y border-outline-variant/15 relative overflow-hidden">
+<div class="absolute inset-0 opacity-5 pointer-events-none">
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#38bdf8_0%,transparent_70%)]"></div>
+</div>
+<h2 class="font-display text-4xl md:text-6xl font-bold tracking-tighter mb-8 relative z-10">
+                Ready to take the <span class="text-primary italic">Stick?</span>
+</h2>
+<p class="text-on-surface-variant text-lg max-w-2xl mx-auto mb-12 relative z-10">
+                Join 1,200+ global intelligence teams monitoring the pulse of the internet. Deploy your first tracking pilot in under 60 seconds.
+            </p>
+<div class="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+<button class="bg-primary text-on-primary font-bold px-10 py-5 rounded-DEFAULT active:scale-95 transition-all text-sm uppercase tracking-widest">
+                    Start Free Trial
+                </button>
+<button class="bg-surface-container-highest text-on-surface font-bold px-10 py-5 rounded-DEFAULT active:scale-95 transition-all text-sm uppercase tracking-widest">
+                    Request Demo
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 bg-[#0e0e0f] border-t border-[#3e484f]/15">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#38bdf8] text-sm">radar</span>
+<span class="text-xs font-bold tracking-tighter text-[#38bdf8]">MentionPilot</span>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="text-[#8e918f] font-['Inter'] text-xs tracking-widest uppercase hover:text-white transition-opacity" href="#">Security</a>
+<a class="text-[#8e918f] font-['Inter'] text-xs tracking-widest uppercase hover:text-white transition-opacity" href="#">API Docs</a>
+<a class="text-[#8e918f] font-['Inter'] text-xs tracking-widest uppercase hover:text-white transition-opacity" href="#">Privacy Policy</a>
+<a class="text-[#8e918f] font-['Inter'] text-xs tracking-widest uppercase hover:text-white transition-opacity" href="#">Changelog</a>
+</div>
+<p class="text-[#8e918f] font-['Inter'] text-[10px] tracking-widest uppercase">
+                © 2024 MentionPilot Intelligence. All rights reserved.
+            </p>
+</div>
+</footer>
+</body></html>
