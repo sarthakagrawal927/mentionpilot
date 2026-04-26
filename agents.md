@@ -8,9 +8,9 @@ Brand mention monitoring for AI assistants — tracks how ChatGPT, Claude, Gemin
 - Language: TypeScript
 - Styling: Tailwind CSS v4
 - DB: Cloudflare D1 (SQLite) + Drizzle — schema in `packages/db`
-- Auth: NextAuth v5 beta (Google OAuth)
+- Auth: better-auth (Google OAuth) — web proxies to API worker for session
 - Testing: Playwright (e2e, `apps/web`), Vitest (`workers/api`)
-- Deploy: Vercel (web) + Cloudflare Workers (API)
+- Deploy: Cloudflare Pages (web, OpenNext bundle) + Cloudflare Workers (API)
 - Package manager: pnpm workspace
 
 ## Repo structure
@@ -68,7 +68,7 @@ bash scripts/build-badge.sh
 - **AI provider config**: `FREE_AI_ENDPOINT_URL`, `FREE_AI_API_KEY`, `FREE_AI_MODEL` set in CF dashboard — never hardcoded.
 - **Badge widget**: self-contained Vite build, `dist/` is the publish artifact. Embeddable "mentioned by AI" badge for customers.
 - **Velite**: used in `apps/web` for MDX content processing (blog/docs).
-- **IMPORTANT**: `@saas-maker/ai` is referenced via local file path (`/Users/sarthakagrawal/Desktop/saas-maker/packages/ai`) — will break on other machines.
+- `@saas-maker/ai` and `@saas-maker/ops` are consumed as published npm packages (no local file paths).
 - Pre-push hook via Husky.
 
 ## Idea Backlog — LLM SEO extension (source: `~/Desktop/reference/saas-ideas/README.md` line 85)

@@ -5,7 +5,7 @@
 MentionPilot is a standalone AI visibility monitoring platform for startups. It helps users track if AI assistants (ChatGPT, Claude, Gemini, Perplexity) recommend their product, optimize content for AI citation, monitor social mentions, and submit to directories.
 
 **Live URLs:**
-- Web: https://mentionpilot-web.vercel.app
+- Web: https://mentionpilot-web.pages.dev
 - API: https://mentionpilot-api.sarthakagrawal927.workers.dev
 - Health check: https://mentionpilot-api.sarthakagrawal927.workers.dev/health
 
@@ -78,12 +78,15 @@ mentionpilot/
 │
 ├── packages/
 │   ├── shared/src/index.ts         # All TypeScript types
-│   └── db/migrations/              # 5 SQL migrations
+│   └── db/migrations/              # 8 SQL migrations
 │       ├── 0001_initial.sql        # users, sessions, projects, brand_configs, prompts, checks, results
 │       ├── 0002_free_checks.sql    # free_checks table
 │       ├── 0003_scheduled_checks.sql # ALTER projects ADD check_schedule, last_scheduled_check
 │       ├── 0004_axp.sql            # axp_pages, axp_bot_visits, axp_configs
-│       └── 0005_directory_submissions.sql # directory_submissions
+│       ├── 0005_directory_submissions.sql # directory_submissions
+│       ├── 0006_badge.sql          # badge widget config
+│       ├── 0007_unified_ai_config.sql # unified AI provider config
+│       └── 0008_api_keys.sql       # API keys table (P8.2)
 │
 ├── docs/research/                  # 4 industry research reports
 ├── plans/                          # Archived roadmap versions
@@ -97,12 +100,12 @@ mentionpilot/
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Next.js 15, React 19, Tailwind CSS 4, shadcn/ui |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4, shadcn/ui |
 | API | Cloudflare Workers, Hono framework |
-| Database | Cloudflare D1 (SQLite) |
-| Auth | Auth.js v5 (NextAuth) with Google OAuth |
+| Database | Cloudflare D1 (SQLite) + Drizzle |
+| Auth | better-auth with Google OAuth (web proxies to API session) |
 | Testing | Vitest (unit), Playwright (e2e) |
-| Deployment | Vercel (web), Cloudflare Workers (API) |
+| Deployment | Cloudflare Pages (web, OpenNext bundle), Cloudflare Workers (API) |
 | Package Manager | pnpm with workspaces |
 
 ---
@@ -114,7 +117,7 @@ mentionpilot/
 **Region:** WNAM (West North America)
 **Cloudflare Account:** `7d048325699a5acddb44d3be31cf6ba9`
 
-### Tables (12)
+### Tables
 
 | Table | Purpose |
 |-------|---------|
@@ -137,12 +140,13 @@ All migrations applied. Booleans stored as 0/1 integers, JSON as TEXT, timestamp
 
 ## Environment Variables
 
-### Vercel (apps/web)
+### Cloudflare Pages (apps/web)
 
 | Variable | Description | Status |
 |----------|-------------|--------|
 | `NEXT_PUBLIC_API_URL` | API base URL | Set: `https://mentionpilot-api.sarthakagrawal927.workers.dev` |
-| `AUTH_SECRET` | Auth.js secret | **NOT SET — needs `openssl rand -base64 32`** |
+| `BETTER_AUTH_SECRET` | better-auth secret | **NOT SET — generate via `openssl rand -base64 32`** |
+| `BETTER_AUTH_URL` | Public URL of the web app | **NOT SET — set to `https://mentionpilot-web.pages.dev`** |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID | **NOT SET — needs Google Cloud Console setup** |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret | **NOT SET — needs Google Cloud Console setup** |
 
@@ -163,14 +167,15 @@ Google OAuth is coded but credentials aren't configured yet. To complete:
 
 1. Go to https://console.cloud.google.com/apis/credentials
 2. Create OAuth 2.0 Client ID (Web application)
-3. Authorized redirect URI: `https://mentionpilot-web.vercel.app/api/auth/callback/google`
-4. Set on Vercel:
+3. Authorized redirect URI: `https://mentionpilot-web.pages.dev/api/auth/callback/google`
+4. Set on Cloudflare Pages (Project Settings → Environment Variables):
    - `AUTH_GOOGLE_ID` = Client ID
    - `AUTH_GOOGLE_SECRET` = Client Secret
-   - `AUTH_SECRET` = output of `openssl rand -base64 32`
-5. Redeploy: `cd apps/web && vercel --prod --yes`
+   - `BETTER_AUTH_SECRET` = output of `openssl rand -base64 32`
+   - `BETTER_AUTH_URL` = `https://mentionpilot-web.pages.dev`
+5. Redeploy: push to main triggers `.github/workflows/deploy-web.yml`.
 
-Auth flow: Google OAuth → Auth.js callback → calls API `POST /v1/auth/callback` → creates user + session → stores API token in JWT → client fetches token from `/api/token`.
+Auth flow: Google OAuth → better-auth handler at `/api/auth/[...all]` → session created → web calls API `POST /v1/auth/callback` to mint API token → client fetches token from `/api/token`.
 
 ---
 
@@ -278,23 +283,20 @@ Files:
 
 ```bash
 # API (Cloudflare Workers)
-cd workers/api && npx wrangler deploy
+cd workers/api && pnpm deploy   # wrangler deploy
 
-# Web (Vercel) — from monorepo root
-NEXT_PUBLIC_API_URL=https://mentionpilot-api.sarthakagrawal927.workers.dev vercel --prod --yes
+# Web (Cloudflare Pages) — push to main triggers .github/workflows/deploy-web.yml
+# Manual deploy:
+cd apps/web
+pnpm cf:build                    # opennextjs-cloudflare build → apps/web/.open-next
+wrangler deploy --dry-run --outdir .cf-pages-bundle
+mkdir -p .cf-pages-out
+cp -r .open-next/assets/. .cf-pages-out/
+cp .cf-pages-bundle/worker.js .cf-pages-out/_worker.js
+wrangler pages deploy .cf-pages-out --project-name=mentionpilot-web --branch=main
 
-# D1 migrations (apply manually via Cloudflare MCP or wrangler)
-# Each migration is one-statement-at-a-time for D1 API
-```
-
-Vercel config is in `vercel.json` at monorepo root:
-```json
-{
-  "framework": "nextjs",
-  "installCommand": "pnpm install",
-  "buildCommand": "cd apps/web && npx next build",
-  "outputDirectory": "apps/web/.next"
-}
+# D1 migrations
+cd workers/api && wrangler d1 migrations apply mentionpilot-db --remote
 ```
 
 ---
@@ -303,9 +305,9 @@ Vercel config is in `vercel.json` at monorepo root:
 
 1. **BYOK (Bring Your Own Keys)** — Users provide their own LLM API keys. Zero cost to us for user checks. Free brand checks use our keys (OPENAI_API_KEY, GOOGLE_API_KEY env vars).
 
-2. **Static export removed** — Was `output: "export"` in next.config.ts, removed to support Auth.js server-side routes. Vercel now uses the Next.js builder with server functions.
+2. **Static export removed** — Was `output: "export"` in next.config.ts, removed to support server-side auth routes. Web now ships as an OpenNext Cloudflare worker bundle deployed to Pages.
 
-3. **Session auth via API** — Auth.js handles Google OAuth on the frontend. On sign-in, calls our API's `/v1/auth/callback` which creates the user + session. The API token is stored in the JWT and passed to client-side API calls.
+3. **Session auth via API** — better-auth handles Google OAuth on the frontend at `/api/auth/[...all]`. On sign-in, the web calls our API's `/v1/auth/callback` which creates the user + session. The API token is stored in the better-auth session and exposed via `/api/token` for client-side API calls.
 
 4. **AXP middleware is user-deployed** — We generate the code (Cloudflare Worker or Vercel middleware), user copies it to their project. Middleware calls our API's `/v1/axp/serve/:projectId` to get optimized content, authenticated by a deploy key.
 
@@ -319,16 +321,15 @@ Vercel config is in `vercel.json` at monorepo root:
 
 ## What's Not Done / Known Issues
 
-1. **Google OAuth not configured** — Needs credentials from Google Cloud Console + env vars on Vercel.
+1. **Google OAuth not configured** — Needs credentials from Google Cloud Console + env vars on Cloudflare Pages.
 2. **Free brand check API keys not set** — OPENAI_API_KEY and GOOGLE_API_KEY need to be set in Cloudflare Workers dashboard for the public free check to work.
 3. **Dashboard pages use hardcoded `projectId = "demo"`** — Need to implement project creation flow and route projects by slug/ID from the session.
 4. **API keys, teams, multi-brand are placeholders** — Routes exist but return 501.
 5. **No email/Slack alert system** — Settings page has the UI but no backend implementation.
 6. **Leaderboard data is empty** — `/v1/public/leaderboard/:category` returns structure but no real rankings (needs aggregated check data).
-7. **No GitHub repo yet** — Project exists locally, needs `gh repo create`.
-8. **Client-side pages still use `DEMO_TOKEN = ""` in some places** — Should use the `api-client.ts` helper with `getToken()` instead.
-9. **Content Gap Analysis (P3.5)** — Listed in roadmap but not implemented.
-10. **Vercel deploy uses `next` in root package.json** — Added as devDep so Vercel detects Next.js framework. Not ideal but works.
+7. **Client-side pages still use `DEMO_TOKEN = ""` in some places** — Should use the `api-client.ts` helper with `getToken()` instead.
+8. **Content Gap Analysis (P3.5)** — Listed in roadmap but not implemented.
+9. **better-auth uses memoryAdapter** — Per `apps/web/src/lib/auth.ts`, the in-memory adapter resets on worker restart. The web frontend treats the API as the source of truth for sessions, so this is intentional but limits any auth state living only on the web.
 
 ---
 
