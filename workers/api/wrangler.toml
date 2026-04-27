@@ -2,6 +2,13 @@ name = "mentionpilot-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
+[observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[limits]
+cpu_ms = 30000
+
 [vars]
 ENVIRONMENT = "production"
 # Free check — single OpenAI-compatible endpoint, set in Cloudflare dashboard
