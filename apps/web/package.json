@@ -20,6 +20,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@saas-maker/ai": "0.1.0",
+    "@saas-maker/posthog-client": "^0.1.0",
     "ai": "^6.0.168",
     "better-auth": "^1.6.9",
     "class-variance-authority": "^0.7.1",

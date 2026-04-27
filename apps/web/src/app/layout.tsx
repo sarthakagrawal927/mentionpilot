@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { AnalyticsProvider } from "@/components/posthog-provider";
 import { SaaSMakerFeedback } from "@/components/saasmaker-feedback";
 
 const geistSans = Geist({
@@ -35,8 +36,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <SaaSMakerFeedback />
+          <AnalyticsProvider>
+            {children}
+            <SaaSMakerFeedback />
+          </AnalyticsProvider>
         </ThemeProvider>
       </body>
     </html>
