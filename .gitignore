@@ -12,3 +12,7 @@ dist/
 .turbo/
 .vercel
 out
+
+# fallow cache
+.fallow/
+cache.bin
