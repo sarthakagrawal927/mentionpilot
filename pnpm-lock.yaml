@@ -44,9 +44,18 @@ importers:
       '@saas-maker/ai':
         specifier: 0.1.0
         version: 0.1.0(@ai-sdk/openai-compatible@2.0.41(zod@4.3.6))(ai@6.0.168(zod@4.3.6))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@saas-maker/changelog-widget':
+        specifier: ^0.2.1
+        version: 0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@saas-maker/feedback':
+        specifier: ^0.2.1
+        version: 0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@saas-maker/posthog-client':
         specifier: ^0.1.0
         version: 0.1.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@saas-maker/testimonials':
+        specifier: ^0.2.1
+        version: 0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       ai:
         specifier: ^6.0.168
         version: 6.0.168(zod@4.3.6)
@@ -2125,10 +2134,22 @@ packages:
       ai:
         optional: true
 
+  '@saas-maker/changelog-widget@0.2.1':
+    resolution: {integrity: sha512-tAQb6hr5mOzbyQxKUNWePlllsdNDquHW0G2FG7u9Um2BzgNNi8WF94M5Khz/SlvVoSYvKl1yMFX6sxnj07kynw==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+
   '@saas-maker/eslint-config@1.0.1':
     resolution: {integrity: sha512-4dv/6Sz13gAlZnQrbaaepZvwaGzw4r7FR2EFjDO+8iyraM6+jYnMRynJc2CufXaPs2cex50y1LR79pZQ6gHnUA==}
     peerDependencies:
       eslint: '>=9.0.0'
+
+  '@saas-maker/feedback@0.2.1':
+    resolution: {integrity: sha512-ajtrH7t/hhzxrNzX2BU0i5nfGpXNu7w4EQCFBajsuFn255O29trRCu3VNL1NoQhWwypjEEdeaK4DqoEY4zd7rw==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   '@saas-maker/ops@0.1.1':
     resolution: {integrity: sha512-MdCt9Q6B5F6c/sGtjfbBD949vr64693j+oyM+umQAIo8ovAtVCqduvMo9N/BDkD4o1FYec8e05fUnmnXmQa0Vg==}
@@ -2146,6 +2167,12 @@ packages:
 
   '@saas-maker/prettier-config@1.0.0':
     resolution: {integrity: sha512-SIEj/4cwEOGnWj6aQzvIQh+BuHZ3DWo4YVYtplgpCIgP9IW01h+x+8Lh648L9boRfGwBDsJq5D0oHly7Ckmjqg==}
+
+  '@saas-maker/testimonials@0.2.1':
+    resolution: {integrity: sha512-mioGG90lztefuWFKCFPDyv8fmL0+Na2eniHlKuc2Ug35sahIgGqdWsjjTFsVIvuY59gaVyj+iJMV4KmVTeTwBA==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   '@saas-maker/tsconfig@1.0.0':
     resolution: {integrity: sha512-23PwZHje/WL6cBOQlZJ3IFxQaWmHvs8FMBPshDCBdCEZLfpLMD7Jpga/D1z42eVpF2X6d9sz1MwdTV5hOE2X+w==}
@@ -7163,6 +7190,11 @@ snapshots:
       '@ai-sdk/openai-compatible': 2.0.41(zod@4.3.6)
       ai: 6.0.168(zod@4.3.6)
 
+  '@saas-maker/changelog-widget@0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
+
   '@saas-maker/eslint-config@1.0.1(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)':
     dependencies:
       '@eslint/js': 9.39.4
@@ -7182,6 +7214,11 @@ snapshots:
       - supports-color
       - typescript
 
+  '@saas-maker/feedback@0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
+
   '@saas-maker/ops@0.1.1': {}
 
   '@saas-maker/posthog-client@0.1.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
@@ -7193,6 +7230,11 @@ snapshots:
       react-dom: 19.2.5(react@19.2.5)
 
   '@saas-maker/prettier-config@1.0.0': {}
+
+  '@saas-maker/testimonials@0.2.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   '@saas-maker/tsconfig@1.0.0': {}
 
