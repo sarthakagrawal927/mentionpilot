@@ -16,6 +16,9 @@ function createAuth(d1: D1Database) {
     pages: {
       signIn: "/login",
     },
+    rateLimit: {
+      enabled: false,
+    },
   });
 }
 
