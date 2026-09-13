@@ -1,7 +1,7 @@
 # agents.md — mentionpilot
 
 ## Purpose
-Brand mention monitoring for AI assistants — tracks how ChatGPT, Claude, Gemini, Perplexity reference brands, with GEO optimization tools, social monitoring, and an embeddable badge widget.
+Brand intelligence for AI assistants — tracks how ChatGPT, Claude, Gemini, and Perplexity reference brands, with evidence-readiness audits, competitor perception, GEO tools, social monitoring, and an embeddable badge widget.
 
 ## Stack
 - Framework: Next.js 16 (App Router, Turbopack) — `apps/web`; Hono CF Worker — `workers/api`
@@ -65,6 +65,7 @@ bash scripts/build-badge.sh
 - **pnpm workspace monorepo**: `apps/*`, `packages/*`, `workers/*`.
 - **D1 migrations** in `packages/db/migrations/`; `wrangler.toml` points there via `migrations_dir`.
 - **Daily cron**: Worker checks AI mentions at 06:00 UTC and stores results in D1.
+- **Brand intelligence utilities**: `packages/shared/src/brand-intelligence.ts` owns the deterministic evidence audit, reusable competitor prompt set, perception clustering, and community-opportunity ranking. These are product-domain primitives; they do not generate synthetic provider results.
 - **AI provider config**: `FREE_AI_ENDPOINT_URL`, `FREE_AI_API_KEY`, `FREE_AI_MODEL` set in CF dashboard — never hardcoded.
 - **Badge widget**: self-contained Vite build, `dist/` is the publish artifact. Embeddable "mentioned by AI" badge for customers.
 - **Velite**: used in `apps/web` for MDX content processing (blog/docs).

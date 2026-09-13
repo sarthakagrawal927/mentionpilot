@@ -231,3 +231,5 @@ export interface HNMention {
   created_at: string;
   hn_url: string;
 }
+
+export * from './brand-intelligence';
