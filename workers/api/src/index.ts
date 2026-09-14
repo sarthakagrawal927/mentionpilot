@@ -18,6 +18,7 @@ import { axp } from './routes/axp';
 import { directories } from './routes/directories';
 import { projects } from './routes/projects';
 import { badge } from './routes/badge';
+import { intelligence } from './routes/intelligence';
 import { getDb } from './db';
 import { runMentionCheck } from './lib/ai-engine';
 
@@ -25,6 +26,8 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // CORS allowlist for authenticated routes (dashboard calls from our own web).
 const CORS_ALLOWED_ORIGINS = [
+  'https://mention.highsignal.app',
+  'https://mentionpilot-web.sarthakagrawal927.workers.dev',
   'https://mentionpilot-web.vercel.app',
   'https://mentionpilot.com',
   'https://www.mentionpilot.com',
@@ -93,6 +96,7 @@ app.route('/v1/axp', axp);
 app.route('/v1/directories', directories);
 app.route('/v1/projects', projects);
 app.route('/v1/badge', badge);
+app.route('/v1/intelligence', intelligence);
 
 export default {
   fetch: app.fetch,

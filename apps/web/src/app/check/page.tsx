@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Loader2, Check, X, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+import { CircleCheckBig, Loader2, Search, X } from "lucide-react";
+import { API_BASE } from "@/lib/api-base";
+import homeStyles from "../page.module.css";
+import styles from "./check.module.css";
 
 interface FreeCheckResult {
   prompt: string;
@@ -20,6 +17,17 @@ interface FreeCheckResult {
   brand_cited: boolean;
   response_preview: string;
   latency_ms: number | null;
+}
+
+function Mark() {
+  return (
+    <svg viewBox="0 0 36 36" role="img" aria-label="MentionPilot mark">
+      <circle cx="18" cy="18" r="15.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9 20.5c4.5-6 13.5-6 18 0" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="18" cy="18" r="3.4" fill="currentColor" />
+      <path d="M18 3v5M18 28v5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
 }
 
 export default function FreeCheckPage() {
@@ -37,6 +45,7 @@ export default function FreeCheckPage() {
     setError(null);
     setResults([]);
     setMentionRate(null);
+    setExpandedIdx(null);
 
     try {
       const startRes = await fetch(`${API_BASE}/v1/free-check`, {
@@ -55,181 +64,210 @@ export default function FreeCheckPage() {
 
       let completed = false;
       while (!completed) {
-        await new Promise((r) => setTimeout(r, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const pollRes = await fetch(`${API_BASE}/v1/free-check/${startData.id}`);
-        const data = (await pollRes.json()) as { status: string; results?: any[]; mention_rate?: number };
+        const data = (await pollRes.json()) as {
+          status: string;
+          results?: FreeCheckResult[];
+          mention_rate?: number | null;
+          error?: string;
+        };
 
         if (data.status !== "running") {
           completed = true;
           setResults(data.results || []);
-          setMentionRate(data.mention_rate ?? null);
+          if (data.status === "failed") {
+            setError(data.error || "The check did not return enough evidence for a reliable score.");
+          } else {
+            setMentionRate(data.mention_rate ?? null);
+          }
         }
       }
-    } catch (err) {
-      setError((err as Error).message);
+    } catch (caughtError) {
+      setError((caughtError as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
+  const mentionPercent = mentionRate === null ? null : Math.round(mentionRate * 100);
+  const mentionStatus = mentionRate === null
+    ? ""
+    : mentionRate > 0.5
+      ? "Good visibility"
+      : mentionRate > 0
+        ? "Low visibility"
+        : "Not mentioned";
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-4 py-16">
-        <div className="text-center space-y-4 mb-12">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            MentionPilot
+    <div className={homeStyles.page}>
+      <header className={homeStyles.header}>
+        <div className={homeStyles.headerInner}>
+          <Link href="/" className={homeStyles.brand} aria-label="MentionPilot home">
+            <span className={homeStyles.mark}><Mark /></span>
+            <span>MentionPilot</span>
           </Link>
-          <h1 className="text-4xl font-bold tracking-tight">
-            Free AI Brand Check
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-            Paste your domain to see if ChatGPT, Gemini, and other AI
-            assistants know about your product. No signup required.
+          <div className={`${homeStyles.headerActions} ${styles.headerActions}`}>
+            <Link href="/login" className={homeStyles.signIn}>Sign in</Link>
+            <Link href="/" className={homeStyles.headerCta}>Return to brief</Link>
+          </div>
+        </div>
+      </header>
+
+      <main className={styles.checkMain}>
+        <aside className={styles.intro}>
+          <p className={styles.eyebrow}>Public evidence check / 01</p>
+          <h1>Put one brand answer on the record.</h1>
+          <p className={styles.introCopy}>
+            Enter the canonical domain. MentionPilot reads the site, creates relevant discovery questions, runs a live model check, and keeps the answer behind the result.
           </p>
-        </div>
 
-        <div className="flex gap-2 mb-8">
-          <Input
-            placeholder="yourproduct.com"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && runCheck()}
-            className="text-lg h-12"
-            disabled={loading}
-          />
-          <Button
-            size="lg"
-            onClick={runCheck}
-            disabled={loading || !domain.trim()}
-            className="h-12 px-6"
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+          <dl className={styles.promiseList}>
+            <div>
+              <dt>01</dt>
+              <dd><strong>Real inference</strong><span>A model response, not a fixture.</span></dd>
+            </div>
+            <div>
+              <dt>02</dt>
+              <dd><strong>Inspectable evidence</strong><span>Questions and response excerpts stay visible.</span></dd>
+            </div>
+            <div>
+              <dt>03</dt>
+              <dd><strong>Honest coverage</strong><span>Failed checks stay explicit and out of the score.</span></dd>
+            </div>
+          </dl>
+        </aside>
 
-        {error && (
-          <p className="text-destructive text-sm text-center mb-4">{error}</p>
-        )}
-
-        {loading && (
-          <div className="text-center py-12 space-y-3">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Querying AI platforms about{" "}
-              <span className="font-medium text-foreground">
-                {brandName || domain}
-              </span>
-              ...
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This takes 15-30 seconds
-            </p>
+        <section className={styles.workbench} aria-label="Free AI brand check">
+          <div className={styles.fileShadow} aria-hidden="true" />
+          <div className={styles.checkFile}>
+            <div className={styles.fileTab}>NEW CASE / FREE CHECK</div>
+            <div className={styles.formHeader}>
+              <div>
+                <p>Evidence request</p>
+                <h2>Run your free check</h2>
+              </div>
+              <span>No signup</span>
+            </div>
+            <form
+              className={styles.formBody}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void runCheck();
+              }}
+            >
+              <label htmlFor="brand-domain">Canonical product domain</label>
+              <div className={styles.inputRow}>
+                <input
+                  id="brand-domain"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://yourproduct.com"
+                  value={domain}
+                  onChange={(event) => setDomain(event.target.value)}
+                  disabled={loading}
+                />
+                <button type="submit" disabled={loading || !domain.trim()}>
+                  {loading ? <Loader2 aria-hidden="true" /> : <Search aria-hidden="true" />}
+                  <span>{loading ? "Checking" : "Run check"}</span>
+                </button>
+              </div>
+              <p>Limited to three free checks per hour to protect the public endpoint.</p>
+            </form>
           </div>
-        )}
 
-        {mentionRate !== null && (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center space-y-2">
-                  <div className="text-5xl font-bold">
-                    {Math.round(mentionRate * 100)}%
+          {error && (
+            <div className={styles.errorSheet} role="alert">
+              <span>Check incomplete</span>
+              <p>{error}</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className={styles.loadingSheet} aria-live="polite">
+              <Loader2 aria-hidden="true" />
+              <div>
+                <strong>Building the evidence record for {brandName || domain}</strong>
+                <p>Reading the site, generating questions, and preserving the response. This can take up to a minute.</p>
+              </div>
+              <span className={styles.loadingRule} aria-hidden="true" />
+            </div>
+          )}
+
+          {mentionPercent !== null && (
+            <div className={styles.results} aria-live="polite">
+              <section className={styles.resultSummary} aria-label="AI mention result">
+                <div className={styles.scoreBox}>
+                  <span>Observed mention rate</span>
+                  <strong>{mentionPercent}%</strong>
+                </div>
+                <div className={styles.resultCopy}>
+                  <p>Case result</p>
+                  <h2>{brandName}</h2>
+                  <span className={styles.resultStamp}>{mentionStatus}</span>
+                  <small>Calculated from successful checks only.</small>
+                </div>
+              </section>
+
+              <section className={styles.evidenceResults}>
+                <header>
+                  <div>
+                    <p>Evidence register</p>
+                    <h2>Answers by question</h2>
                   </div>
-                  <p className="text-muted-foreground">
-                    AI Mention Rate for{" "}
-                    <span className="font-medium text-foreground">
-                      {brandName}
-                    </span>
-                  </p>
-                  <Badge
-                    variant={
-                      mentionRate > 0.5
-                        ? "default"
-                        : mentionRate > 0
-                          ? "secondary"
-                          : "destructive"
-                    }
-                    className="text-sm"
-                  >
-                    {mentionRate > 0.5
-                      ? "Good visibility"
-                      : mentionRate > 0
-                        ? "Low visibility"
-                        : "Not mentioned"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Results by Query</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {results.map((r, i) => (
-                    <div key={i} className="rounded-md border">
-                      <button
-                        className="flex w-full items-center justify-between px-4 py-3 text-sm text-left hover:bg-muted/50 transition-colors"
-                        onClick={() =>
-                          setExpandedIdx(expandedIdx === i ? null : i)
-                        }
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {r.brand_mentioned ? (
-                            <Check className="h-4 w-4 text-green-500 shrink-0" />
-                          ) : (
-                            <X className="h-4 w-4 text-red-500 shrink-0" />
-                          )}
-                          <Badge variant="outline" className="shrink-0">
-                            {r.platform}
-                          </Badge>
-                          <span className="truncate text-muted-foreground">
-                            {r.prompt}
+                  <span>{results.length} records</span>
+                </header>
+                <div className={styles.resultList}>
+                  {results.map((result, index) => {
+                    const panelId = `answer-evidence-${index}`;
+                    const isExpanded = expandedIdx === index;
+                    return (
+                      <article key={`${result.prompt}-${index}`} className={styles.resultItem}>
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={panelId}
+                          onClick={() => setExpandedIdx(isExpanded ? null : index)}
+                        >
+                          <span className={result.brand_mentioned ? styles.mentioned : styles.notMentioned}>
+                            {result.brand_mentioned ? <CircleCheckBig aria-hidden="true" /> : <X aria-hidden="true" />}
                           </span>
-                        </div>
-                        {r.brand_position && (
-                          <Badge variant="secondary">
-                            #{r.brand_position}
-                          </Badge>
-                        )}
-                      </button>
-                      {expandedIdx === i && (
-                        <div className="border-t px-4 py-3">
-                          <div className="text-sm whitespace-pre-wrap bg-muted/50 rounded-md p-3 max-h-48 overflow-y-auto">
-                            {r.response_preview}
+                          <span className={styles.provider}>{result.platform}</span>
+                          <span className={styles.prompt}>{result.prompt}</span>
+                          <span className={styles.position}>{result.brand_position ? `#${result.brand_position}` : isExpanded ? "Close" : "Open"}</span>
+                        </button>
+                        {isExpanded && (
+                          <div id={panelId} className={styles.answerDetail}>
+                            <div>
+                              <span>Model</span>
+                              <strong>{result.model}</strong>
+                            </div>
+                            <div>
+                              <span>Citation state</span>
+                              <strong>{result.brand_cited ? "Brand cited" : "No brand citation"}</strong>
+                            </div>
+                            <p>{result.response_preview}</p>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
+              </section>
 
-            <Card className="border-primary/50">
-              <CardContent className="pt-6 text-center space-y-3">
-                <p className="font-medium">
-                  Want to track this over time and improve your AI visibility?
-                </p>
-                <Link href="/dashboard">
-                  <Button size="lg">
-                    Get Started Free
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+              <section className={styles.workspaceCta}>
+                <div>
+                  <p>Keep the case open</p>
+                  <h2>Track the same evidence over time.</h2>
+                  <span>Create a workspace for history, competitors, tasks, and recurring checks.</span>
+                </div>
+                <Link href="/dashboard">Open a workspace <span aria-hidden="true">→</span></Link>
+              </section>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

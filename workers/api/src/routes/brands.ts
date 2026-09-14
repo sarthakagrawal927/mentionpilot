@@ -10,6 +10,15 @@ const VALID_PLATFORMS: AIPlatform[] = ['openai', 'anthropic', 'google', 'perplex
 const MAX_COMPETITORS = 5;
 const VALID_SCHEDULES = ['daily', 'weekly'];
 
+function parseList(value: unknown, max: number) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((item) => String(item).trim()).filter(Boolean))].slice(0, max);
+}
+
+function optionalText(value: unknown) {
+  return typeof value === 'string' ? value.trim() || null : null;
+}
+
 function toConfigRecord(row: any): BrandConfigRecord {
   return {
     id: row.id,
@@ -18,6 +27,10 @@ function toConfigRecord(row: any): BrandConfigRecord {
     brand_aliases: JSON.parse(row.brand_aliases || '[]'),
     brand_url: row.brand_url,
     competitors: JSON.parse(row.competitors || '[]'),
+    keywords: JSON.parse(row.keywords || '[]'),
+    target_customer: row.target_customer || null,
+    monitoring_topics: JSON.parse(row.monitoring_topics || '[]'),
+    reddit_communities: JSON.parse(row.reddit_communities || '[]'),
     platforms: JSON.parse(row.platforms || '[]'),
     has_openai_key: !!row.openai_api_key,
     has_anthropic_key: !!row.anthropic_api_key,
@@ -46,12 +59,38 @@ brands.post('/:projectId/config', async (c) => {
   if (!result) return c.json({ error: 'Forbidden' }, 403);
 
   const body = await c.req.json();
-  if (!body.brand_name?.trim()) return c.json({ error: 'brand_name is required' }, 400);
+  if (typeof body.brand_name !== 'string' || !body.brand_name.trim()) {
+    return c.json({ error: 'brand_name is required' }, 400);
+  }
 
-  const competitors = body.competitors || [];
-  if (competitors.length > MAX_COMPETITORS) return c.json({ error: `Max ${MAX_COMPETITORS} competitors` }, 400);
+  const rawCompetitors: unknown[] = Array.isArray(body.competitors) ? body.competitors : [];
+  if (rawCompetitors.length > MAX_COMPETITORS) {
+    return c.json({ error: `Max ${MAX_COMPETITORS} competitors` }, 400);
+  }
+  if (rawCompetitors.some((competitor) => {
+    if (!competitor || typeof competitor !== 'object') return true;
+    const name = (competitor as Record<string, unknown>).name;
+    return typeof name !== 'string' || !name.trim();
+  })) {
+    return c.json({ error: 'Each competitor must have a name' }, 400);
+  }
+  const competitors = rawCompetitors.map((competitor) => {
+    const item = competitor as Record<string, unknown>;
+    const url = optionalText(item.url);
+    return { name: String(item.name).trim(), ...(url ? { url } : {}) };
+  });
 
-  const platforms = body.platforms || ['openai', 'anthropic', 'google', 'perplexity'];
+  const keywords = parseList(body.keywords, 20);
+  const monitoringTopics = parseList(body.monitoring_topics, 10);
+  const redditCommunities = parseList(body.reddit_communities, 5);
+  if (redditCommunities.some((community) => !/^[A-Za-z0-9_]{2,32}$/.test(community))) {
+    return c.json({ error: 'Reddit communities must be subreddit names without r/' }, 400);
+  }
+
+  const platforms = body.platforms === undefined
+    ? ['openai', 'anthropic', 'google', 'perplexity']
+    : body.platforms;
+  if (!Array.isArray(platforms)) return c.json({ error: 'platforms must be a list' }, 400);
   if (!platforms.every((p: string) => VALID_PLATFORMS.includes(p as AIPlatform))) {
     return c.json({ error: 'Invalid platform' }, 400);
   }
@@ -60,17 +99,21 @@ brands.post('/:projectId/config', async (c) => {
     id: crypto.randomUUID(),
     project_id: result.project.id,
     brand_name: body.brand_name.trim(),
-    brand_aliases: JSON.stringify(body.brand_aliases || []),
-    brand_url: body.brand_url || null,
+    brand_aliases: JSON.stringify(parseList(body.brand_aliases, 20)),
+    brand_url: optionalText(body.brand_url),
     competitors: JSON.stringify(competitors),
+    keywords: JSON.stringify(keywords),
+    target_customer: optionalText(body.target_customer),
+    monitoring_topics: JSON.stringify(monitoringTopics),
+    reddit_communities: JSON.stringify(redditCommunities),
     platforms: JSON.stringify(platforms),
     openai_api_key: body.openai_api_key || null,
     anthropic_api_key: body.anthropic_api_key || null,
     google_api_key: body.google_api_key || null,
     perplexity_api_key: body.perplexity_api_key || null,
-    ai_endpoint_url: body.ai_endpoint_url || null,
-    ai_api_key: body.ai_api_key || null,
-    ai_model: body.ai_model || null,
+    ai_endpoint_url: optionalText(body.ai_endpoint_url),
+    ai_api_key: optionalText(body.ai_api_key),
+    ai_model: optionalText(body.ai_model),
   });
 
   return c.json(toConfigRecord(row));

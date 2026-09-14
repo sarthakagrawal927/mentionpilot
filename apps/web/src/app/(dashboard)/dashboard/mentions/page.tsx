@@ -14,7 +14,7 @@ import {
   Key,
   RefreshCw,
 } from "lucide-react";
-import { useModelDiscovery } from "@saas-maker/ai";
+import { useModelDiscovery } from "@/lib/use-model-discovery";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,12 +30,34 @@ import { Separator } from "@/components/ui/separator";
 import { apiFetch } from "@/lib/api-client";
 import { useProject } from "@/lib/use-project";
 import type {
+  AIPlatform,
   BrandConfigRecord,
   PromptRecord,
   CheckRecord,
   ResultRecord,
   DashboardData,
 } from "@mentionpilot/shared";
+
+const PROVIDERS: Array<{ key: Exclude<AIPlatform, "custom">; label: string }> = [
+  { key: "openai", label: "OpenAI" },
+  { key: "anthropic", label: "Anthropic" },
+  { key: "google", label: "Google AI" },
+  { key: "perplexity", label: "Perplexity" },
+];
+
+function providerForEndpoint(endpoint: string | null): AIPlatform | null {
+  if (!endpoint) return null;
+  try {
+    const hostname = new URL(endpoint).hostname.toLowerCase();
+    if (hostname === "api.openai.com") return "openai";
+    if (hostname === "api.anthropic.com") return "anthropic";
+    if (hostname === "generativelanguage.googleapis.com") return "google";
+    if (hostname === "api.perplexity.ai") return "perplexity";
+    return "custom";
+  } catch {
+    return null;
+  }
+}
 
 export default function MentionsPage() {
   const { projectId, loading: projectLoading } = useProject();
@@ -52,6 +74,10 @@ export default function MentionsPage() {
   const [brandAliases, setBrandAliases] = useState("");
   const [brandUrl, setBrandUrl] = useState("");
   const [competitors, setCompetitors] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [targetCustomer, setTargetCustomer] = useState("");
+  const [monitoringTopics, setMonitoringTopics] = useState("");
+  const [redditCommunities, setRedditCommunities] = useState("");
   const [aiEndpointUrl, setAiEndpointUrl] = useState("");
   const [aiApiKey, setAiApiKey] = useState("");
   const [aiModel, setAiModel] = useState("");
@@ -92,6 +118,10 @@ export default function MentionsPage() {
         setCompetitors(
           data.config.competitors.map((c) => c.name).join(", ")
         );
+        setKeywords(data.config.keywords.join(", "));
+        setTargetCustomer(data.config.target_customer || "");
+        setMonitoringTopics(data.config.monitoring_topics.join(", "));
+        setRedditCommunities(data.config.reddit_communities.join(", "));
         setAiEndpointUrl(data.config.ai_endpoint_url || "");
         setAiModel(data.config.ai_model || "");
       }
@@ -129,15 +159,19 @@ export default function MentionsPage() {
 
   const discoverModels = async () => {
     const url = aiEndpointUrl.trim();
-    const key = aiApiKey.trim() || undefined;
-    if (!url) return;
+    const key = aiApiKey.trim();
+    if (!url || !key) {
+      setError("Enter the endpoint API key to fetch its models. Saved keys are never read back.");
+      return;
+    }
 
-    // Use saved key if user hasn't entered a new one
-    const effectiveKey = key || (config?.has_ai_api_key ? "__saved__" : undefined);
-    if (!effectiveKey) return;
-
-    await discoverModelsHook(url, key || "");
-    setShowModelDropdown(true);
+    setError(null);
+    try {
+      await discoverModelsHook(url, key);
+      setShowModelDropdown(true);
+    } catch (discoveryError) {
+      setError((discoveryError as Error).message);
+    }
   };
 
   const saveConfig = async () => {
@@ -155,6 +189,10 @@ export default function MentionsPage() {
           .map((s) => s.trim())
           .filter(Boolean)
           .map((name) => ({ name })),
+        keywords: keywords.split(",").map((s) => s.trim()).filter(Boolean),
+        target_customer: targetCustomer || undefined,
+        monitoring_topics: monitoringTopics.split(",").map((s) => s.trim()).filter(Boolean),
+        reddit_communities: redditCommunities.split(",").map((s) => s.trim().replace(/^r\//i, "")).filter(Boolean),
       };
       if (aiEndpointUrl) payload.ai_endpoint_url = aiEndpointUrl;
       if (aiApiKey) payload.ai_api_key = aiApiKey;
@@ -239,6 +277,14 @@ export default function MentionsPage() {
     );
   }
 
+  const configuredProvider = providerForEndpoint(config?.ai_endpoint_url || null);
+  const observedProviders = new Set(
+    latestResults
+      .filter((result) => result.provider_status === "success")
+      .map((result) => result.platform)
+  );
+  const displayedCheck = checks.find((check) => check.id === latestResults[0]?.check_id) ?? checks[0];
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -310,6 +356,55 @@ export default function MentionsPage() {
 
           <Separator />
 
+          <div>
+            <h4 className="text-sm font-medium">Signal profile</h4>
+            <p className="text-xs text-muted-foreground mt-1">
+              Used to rank source-backed findings. Reddit communities must exist in the published Reddit Insights archive.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="target-customer">Target customer</Label>
+              <Input
+                id="target-customer"
+                placeholder="B2B SaaS founders and marketing teams"
+                value={targetCustomer}
+                onChange={(e) => setTargetCustomer(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="keywords">Keywords (comma-separated)</Label>
+              <Input
+                id="keywords"
+                placeholder="AI visibility, brand monitoring"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="monitoring-topics">Monitoring topics</Label>
+              <Input
+                id="monitoring-topics"
+                placeholder="competitor comparisons, purchase intent"
+                value={monitoringTopics}
+                onChange={(e) => setMonitoringTopics(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reddit-communities">Reddit Insights communities (max 5)</Label>
+              <Input
+                id="reddit-communities"
+                placeholder="SaaS, marketing, startups"
+                value={redditCommunities}
+                onChange={(e) => setRedditCommunities(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <Separator />
+
           <h4 className="text-sm font-medium flex items-center gap-2">
             <Key className="h-4 w-4" />
             AI Endpoint
@@ -368,7 +463,7 @@ export default function MentionsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={discoverModels}
-                  disabled={loadingModels || !aiEndpointUrl.trim()}
+                  disabled={loadingModels || !aiEndpointUrl.trim() || !aiApiKey.trim()}
                   className="h-7 text-xs"
                 >
                   {loadingModels ? (
@@ -407,6 +502,32 @@ export default function MentionsPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="rounded-md border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Provider evidence coverage</p>
+                <p className="text-xs text-muted-foreground">
+                  A provider is observed only after a successful response from its direct endpoint.
+                </p>
+              </div>
+              {configuredProvider === "custom" && <Badge variant="secondary">Custom endpoint configured</Badge>}
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+              {PROVIDERS.map((provider) => {
+                const observed = observedProviders.has(provider.key);
+                const configured = configuredProvider === provider.key;
+                return (
+                  <div key={provider.key} className="flex items-center justify-between rounded border px-3 py-2 text-xs">
+                    <span>{provider.label}</span>
+                    <Badge variant={observed ? "default" : "secondary"}>
+                      {observed ? "observed" : configured ? "configured" : "unavailable"}
+                    </Badge>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -522,16 +643,16 @@ export default function MentionsPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Results</span>
-              {checks.length > 0 &&
-                checks[0].brand_mention_rate !== null && (
+              {displayedCheck?.brand_mention_rate !== null &&
+                displayedCheck?.brand_mention_rate !== undefined && (
                   <Badge
                     variant={
-                      checks[0].brand_mention_rate > 0.5
+                      displayedCheck.brand_mention_rate > 0.5
                         ? "default"
                         : "secondary"
                     }
                   >
-                    {Math.round(checks[0].brand_mention_rate * 100)}% mention
+                    {Math.round(displayedCheck.brand_mention_rate * 100)}% mention
                     rate
                   </Badge>
                 )}
@@ -556,7 +677,7 @@ export default function MentionsPage() {
                           <X className="h-4 w-4 text-red-500 shrink-0" />
                         )}
                         <span className="truncate text-muted-foreground">
-                          {prompts.find((p) => p.id === result.prompt_id)
+                          {result.prompt_text || prompts.find((p) => p.id === result.prompt_id)
                             ?.prompt_text || result.prompt_id}
                         </span>
                       </div>
@@ -588,9 +709,15 @@ export default function MentionsPage() {
                     </button>
                     {isExpanded && (
                       <div className="border-t px-4 py-3 space-y-3">
-                        <div className="text-sm whitespace-pre-wrap bg-muted/50 rounded-md p-3 max-h-64 overflow-y-auto">
-                          {result.response_text}
-                        </div>
+                        {result.provider_status === "error" ? (
+                          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                            Provider unavailable: {result.error_message || "Unknown provider error"}
+                          </div>
+                        ) : (
+                          <div className="text-sm whitespace-pre-wrap bg-muted/50 rounded-md p-3 max-h-64 overflow-y-auto">
+                            {result.response_text}
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2 text-xs">
                           <span className="text-muted-foreground">
                             Model: {result.model}
@@ -600,6 +727,9 @@ export default function MentionsPage() {
                               {result.latency_ms}ms
                             </span>
                           )}
+                          <span className="text-muted-foreground">
+                            Checked: {new Date(result.created_at).toLocaleString()}
+                          </span>
                           {result.brand_cited && (
                             <Badge variant="outline" className="text-xs">
                               Cited
@@ -617,6 +747,22 @@ export default function MentionsPage() {
                             </span>
                           )}
                         </div>
+                        {result.citations.length > 0 && (
+                          <div className="space-y-1 text-xs">
+                            <p className="font-medium">Citations retained from this response</p>
+                            {result.citations.map((citation) => (
+                              <a
+                                key={citation}
+                                href={citation}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block break-all text-primary underline-offset-2 hover:underline"
+                              >
+                                {citation}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

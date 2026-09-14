@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { requireSession, verifyProjectOwnership } from '../middleware/auth';
 import { searchBrandMentions, searchHN } from '../lib/hn-monitor';
-import { searchBrandOnReddit } from '../lib/reddit-monitor';
 import { searchProductHunt } from '../lib/ph-monitor';
 
 const social = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -53,20 +52,14 @@ social.get('/hn/search', async (c) => {
   return c.json({ hits, total });
 });
 
-// GET /:projectId/reddit — search Reddit for brand mentions
+// GET /:projectId/reddit — retired: Reddit Insights owns Reddit collection.
 social.get('/:projectId/reddit', async (c) => {
   const result = await verifyProjectOwnership(c, c.req.param('projectId'));
   if (!result) return c.json({ error: 'Forbidden' }, 403);
-
-  const config = await result.db.getBrandConfig(result.project.id);
-  if (!config) return c.json({ error: 'Configure brand first' }, 400);
-
-  const brandName = config.brand_name;
-  const aliases: string[] = JSON.parse(config.brand_aliases || '[]');
-  const timeFilter = (c.req.query('time') || 'month') as 'week' | 'month' | 'year';
-
-  const mentions = await searchBrandOnReddit(brandName, aliases, timeFilter);
-  return c.json({ mentions, total: mentions.length });
+  return c.json({
+    error: 'Direct Reddit collection is retired. Configure Reddit Insights communities and use the signal inbox.',
+    replacement: `/v1/intelligence/${result.project.id}/inbox`,
+  }, 410);
 });
 
 // GET /:projectId/producthunt — search PH for brand mentions
@@ -93,13 +86,9 @@ social.get('/:projectId/feed', async (c) => {
   const aliases: string[] = JSON.parse(config.brand_aliases || '[]');
   const days = parseInt(c.req.query('days') || '30');
 
-  // Map days to Reddit time filter
-  const redditTime: 'week' | 'month' | 'year' = days <= 7 ? 'week' : days <= 30 ? 'month' : 'year';
-
-  // Run all searches in parallel
-  const [hnResult, redditResult, phResult] = await Promise.allSettled([
+  // Legacy feed: direct Reddit collection is intentionally excluded.
+  const [hnResult, phResult] = await Promise.allSettled([
     searchBrandMentions(brandName, aliases, days),
-    searchBrandOnReddit(brandName, aliases, redditTime),
     searchProductHunt(brandName),
   ]);
 
@@ -133,22 +122,6 @@ social.get('/:projectId/feed', async (c) => {
     }
   }
 
-  if (redditResult.status === 'fulfilled') {
-    for (const m of redditResult.value) {
-      feed.push({
-        id: `reddit_${m.id}`,
-        source: 'reddit',
-        title: m.title || `r/${m.subreddit} comment`,
-        content: (m.selftext || m.body || '').slice(0, 300) || null,
-        url: m.permalink,
-        author: m.author,
-        score: m.score,
-        comments: m.num_comments,
-        created_at: m.created_at,
-      });
-    }
-  }
-
   if (phResult.status === 'fulfilled') {
     for (const m of phResult.value) {
       feed.push({
@@ -173,8 +146,11 @@ social.get('/:projectId/feed', async (c) => {
     total: feed.length,
     sources: {
       hackernews: hnResult.status === 'fulfilled' ? hnResult.value.length : 0,
-      reddit: redditResult.status === 'fulfilled' ? redditResult.value.length : 0,
+      reddit: 0,
       producthunt: phResult.status === 'fulfilled' ? phResult.value.length : 0,
+    },
+    unavailable_sources: {
+      reddit: 'Direct Reddit collection is retired; use the Reddit Insights-backed signal inbox.',
     },
   });
 });

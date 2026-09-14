@@ -1,13 +1,23 @@
 // AI query engine for MentionPilot
 // Uses a single OpenAI-compatible endpoint configured by the user.
 
-import { fetchChatCompletion } from '@saas-maker/ai';
-import type { AIConfig } from '@saas-maker/ai';
+import type { AIPlatform } from '@mentionpilot/shared';
 
 export type Sentiment = 'positive' | 'neutral' | 'negative';
 
-/** @deprecated Use AIConfig from @saas-maker/ai */
-export type AiEndpointConfig = AIConfig;
+export interface AiEndpointConfig {
+  endpointUrl: string;
+  apiKey: string;
+  model: string;
+}
+
+export interface QueryEndpointOptions {
+  json?: boolean;
+  maxTokens?: number;
+  projectId?: string;
+}
+
+export const DEFAULT_WORKERS_AI_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 export interface PlatformResponse {
   responseText: string;
@@ -30,22 +40,51 @@ export interface AnalysisResult {
   brand_cited: boolean;
 }
 
+export function detectAIPlatform(endpointUrl: string): AIPlatform {
+  try {
+    const hostname = new URL(endpointUrl).hostname.toLowerCase();
+    if (hostname === 'api.openai.com') return 'openai';
+    if (hostname === 'api.anthropic.com') return 'anthropic';
+    if (hostname === 'generativelanguage.googleapis.com') return 'google';
+    if (hostname === 'api.perplexity.ai') return 'perplexity';
+  } catch {
+    // Treat malformed or unrecognized endpoint URLs as custom evidence sources.
+  }
+  return 'custom';
+}
+
 // ---------------------------------------------------------------------------
 // Query an OpenAI-compatible endpoint
 // ---------------------------------------------------------------------------
 
 export async function queryEndpoint(
-  config: AIConfig,
-  prompt: string
+  config: AiEndpointConfig,
+  prompt: string,
+  options: QueryEndpointOptions = {},
 ): Promise<PlatformResponse> {
   const start = Date.now();
-  const res = await fetchChatCompletion({
-    config,
-    messages: [{ role: 'user', content: prompt }],
-    maxTokens: 1024,
-    stream: false,
+  const res = await fetch(config.endpointUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: options.maxTokens ?? 1024,
+      stream: false,
+      ...(options.json ? { response_format: { type: 'json_object' } } : {}),
+      ...(options.projectId ? { project_id: options.projectId } : {}),
+    }),
+    redirect: 'manual',
+    signal: AbortSignal.timeout(30_000),
   });
   const latencyMs = Date.now() - start;
+
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`AI endpoint refused redirect (${res.status})`);
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -64,6 +103,29 @@ export async function queryEndpoint(
     responseText,
     model: json.model || config.model,
     latencyMs,
+  };
+}
+
+export async function queryWorkersAi(
+  ai: Ai,
+  promptText: string,
+  model = DEFAULT_WORKERS_AI_MODEL,
+): Promise<PlatformResponse> {
+  const start = Date.now();
+  const result = await ai.run(model, {
+    messages: [{ role: 'user', content: promptText }],
+    max_tokens: 512,
+  });
+  const responseText = typeof result.response === 'string' ? result.response : '';
+
+  if (!responseText) {
+    throw new Error('Workers AI returned an empty response');
+  }
+
+  return {
+    responseText,
+    model,
+    latencyMs: Date.now() - start,
   };
 }
 
@@ -224,10 +286,12 @@ export async function runMentionCheck(
     apiKey: config.ai_api_key,
     model: config.ai_model,
   };
+  const platform = detectAIPlatform(config.ai_endpoint_url);
 
   let completedQueries = 0;
   let mentionCount = 0;
-  let totalQueries = 0;
+  let successfulQueries = 0;
+  let failedQueries = 0;
 
   try {
     for (const prompt of prompts) {
@@ -246,8 +310,11 @@ export async function runMentionCheck(
           check_id: checkId,
           project_id: projectId,
           prompt_id: prompt.id,
-          platform: 'custom',
+          prompt_text: prompt.prompt_text,
+          platform,
           model: response.model,
+          provider_status: 'success',
+          error_message: null,
           response_text: response.responseText,
           brand_mentioned: analysis.brand_mentioned,
           brand_sentiment: analysis.brand_sentiment,
@@ -259,16 +326,20 @@ export async function runMentionCheck(
         });
 
         if (analysis.brand_mentioned) mentionCount++;
-        totalQueries++;
+        successfulQueries++;
       } catch (err) {
+        const errorMessage = (err as Error).message.slice(0, 500);
         await db.createResult({
           id: crypto.randomUUID(),
           check_id: checkId,
           project_id: projectId,
           prompt_id: prompt.id,
-          platform: 'custom',
+          prompt_text: prompt.prompt_text,
+          platform,
           model: endpointConfig.model,
-          response_text: `Error: ${(err as Error).message}`,
+          provider_status: 'error',
+          error_message: errorMessage,
+          response_text: '',
           brand_mentioned: false,
           brand_sentiment: null,
           brand_position: null,
@@ -277,18 +348,20 @@ export async function runMentionCheck(
           brand_cited: false,
           latency_ms: null,
         });
-        totalQueries++;
+        failedQueries++;
       }
 
       completedQueries++;
       await db.updateCheck(checkId, { completed_queries: completedQueries });
     }
 
-    const mentionRate = totalQueries > 0 ? mentionCount / totalQueries : 0;
+    const mentionRate = successfulQueries > 0 ? mentionCount / successfulQueries : null;
     await db.updateCheck(checkId, {
-      status: 'completed',
+      status: successfulQueries > 0 ? 'completed' : 'failed',
       brand_mention_rate: mentionRate,
-      summary: `Brand mentioned in ${mentionCount}/${totalQueries} queries (${Math.round(mentionRate * 100)}%)`,
+      summary: successfulQueries > 0
+        ? `Brand mentioned in ${mentionCount}/${successfulQueries} available responses (${Math.round((mentionRate ?? 0) * 100)}%); ${failedQueries} provider ${failedQueries === 1 ? 'request was' : 'requests were'} unavailable.`
+        : `Provider unavailable for all ${failedQueries} attempted queries.`,
       completed_at: new Date().toISOString(),
     });
   } catch (err) {

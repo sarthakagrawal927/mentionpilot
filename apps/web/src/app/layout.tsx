@@ -30,6 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'var __name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true });',
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

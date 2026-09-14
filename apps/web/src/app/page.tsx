@@ -1,291 +1,324 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  Eye,
-  Search,
-  BarChart3,
-  Shield,
-  FileCode,
-  MessageSquare,
-  Layers,
-  Send,
-  Zap,
-  Check,
-  ArrowRight,
-  Globe,
-  TrendingUp,
-  Award,
-  Star,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import styles from "./page.module.css";
 
-const features = [
+export const metadata: Metadata = {
+  title: "MentionPilot — See how AI describes your brand",
+  description:
+    "Inspect the prompts, answers, citations, and competitive context behind your brand's visibility in AI assistants.",
+};
+
+const retainedEvidence = [
   {
-    icon: Eye,
-    title: "AI Mention Check",
-    description: "Query ChatGPT, Claude, Gemini, and Perplexity to see if they recommend your product. BYOK — your keys, your cost (~$0.03/check).",
+    number: "01",
+    title: "The exact question",
+    body: "Keep the prompt that produced the result, not a paraphrased category label.",
   },
   {
-    icon: Layers,
-    title: "AXP Shadow Site",
-    description: "Serve AI-optimized content to AI crawlers. Reduce token count by 90%+. Humans see your normal site. Bots see the optimized version.",
+    number: "02",
+    title: "The answer in context",
+    body: "Read the complete response and see where your brand appears beside alternatives.",
   },
   {
-    icon: BarChart3,
-    title: "Visibility Analytics",
-    description: "Track mention rate, sentiment, position, and citations over time. See share of voice vs competitors across all AI platforms.",
+    number: "03",
+    title: "Sources and timing",
+    body: "Retain citations, provider status, check time, and explicit coverage limits.",
   },
   {
-    icon: FileCode,
-    title: "GEO Optimization",
-    description: "Score your pages for AI citation readiness. Check crawlability, schema markup, and generate llms.txt files automatically.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Social Monitoring",
-    description: "Unified feed of brand mentions across Hacker News, Reddit, and Product Hunt. Know when people talk about you — instantly.",
-  },
-  {
-    icon: Send,
-    title: "Submit Everywhere",
-    description: "87+ curated directories with submission links, auto-fill from your brand profile, and a tracker so you never lose progress.",
+    number: "04",
+    title: "The next useful move",
+    body: "Turn a narrative gap into a sourced page, proof point, or follow-up task.",
   },
 ];
 
-const freeTools = [
-  { title: "AI Brand Check", description: "See if AI knows your product. No signup.", href: "/check" },
-  { title: "GEO Score", description: "Rate your page's AI-readiness 0-100.", href: "/dashboard/geo" },
-  { title: "Crawlability Check", description: "Can GPTBot and ClaudeBot reach your site?", href: "/dashboard/geo" },
-  { title: "llms.txt Generator", description: "Auto-generate an AI-readable site summary.", href: "/dashboard/geo" },
+const workflow = [
+  {
+    index: "1",
+    title: "Ask the questions buyers ask",
+    body: "Define your brand, competitors, topics, and the discovery questions that matter to your market.",
+    note: "Prompt set retained",
+  },
+  {
+    index: "2",
+    title: "Inspect every observed answer",
+    body: "Compare successful checks across configured assistants without treating provider failures as negative mentions.",
+    note: "Coverage stays explicit",
+  },
+  {
+    index: "3",
+    title: "Find the narrative gap",
+    body: "See which competitors are recommended, what evidence supports them, and where your own story is thin.",
+    note: "Evidence before score",
+  },
+  {
+    index: "4",
+    title: "Change the source material",
+    body: "Improve comparison pages, proof, FAQs, schema, or canonical summaries—then return to the same question.",
+    note: "Action linked to finding",
+  },
 ];
 
-const competitors = [
-  { name: "Peec AI", price: "$103/mo", prompts: "25", note: "Enterprise focused" },
-  { name: "Gauge", price: "$100/mo", prompts: "100/day", note: "Content creation at $599" },
-  { name: "Otterly", price: "$29/mo", prompts: "15", note: "Gartner Cool Vendor" },
-  { name: "Scrunch AI", price: "$250/mo", prompts: "350", note: "AXP pioneer" },
-  { name: "MentionPilot", price: "Free", prompts: "20", note: "BYOK + all features", highlight: true },
-];
+function Mark() {
+  return (
+    <svg viewBox="0 0 36 36" role="img" aria-label="MentionPilot mark">
+      <circle cx="18" cy="18" r="15.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9 20.5c4.5-6 13.5-6 18 0" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="18" cy="18" r="3.4" fill="currentColor" />
+      <path d="M18 3v5M18 28v5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
-const stats = [
-  { value: "4", label: "AI Platforms" },
-  { value: "87+", label: "Directories" },
-  { value: "3", label: "Social Sources" },
-  { value: "$0", label: "Platform Cost" },
-];
+function Arrow() {
+  return (
+    <svg viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M3 9h11M10 5l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function SourceMark() {
+  return (
+    <svg viewBox="0 0 28 28" aria-hidden="true">
+      <path d="M5 8.5h18M5 14h12M5 19.5h15" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="22" cy="19.5" r="3.25" fill="var(--paper)" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-bold tracking-tight text-primary flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm shadow-lg shadow-primary/20">M</div>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <Link href="/" className={styles.brand} aria-label="MentionPilot home">
+            <span className={styles.mark}><Mark /></span>
             <span>MentionPilot</span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-            <a href="#features" className="text-muted-foreground hover:text-primary transition-colors">Features</a>
-            <a href="#tools" className="text-muted-foreground hover:text-primary transition-colors">Free Tools</a>
-            <a href="#pricing" className="text-muted-foreground hover:text-primary transition-colors">Pricing</a>
-            <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">Blog</Link>
+          <nav className={styles.nav} aria-label="Primary navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="#evidence">Evidence</a>
+            <Link href="/blog">Research</Link>
           </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="font-medium">Sign In</Button>
-            </Link>
-            <Link href="/check">
-              <Button size="sm" className="bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 transition-transform font-bold">
-                Free Brand Check
-              </Button>
-            </Link>
+          <div className={styles.headerActions}>
+            <Link href="/login" className={styles.signIn}>Sign in</Link>
+            <Link href="/check" className={styles.headerCta}>Free brand check</Link>
           </div>
         </div>
       </header>
 
       <main>
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-28 pb-20 px-4">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_45%_at_50%_50%,var(--primary)_0%,transparent_100%)] opacity-[0.05]" />
-          <div className="mx-auto max-w-4xl text-center">
-            <Badge variant="outline" className="mb-8 border-accent/20 bg-accent/5 text-accent px-4 py-1.5 font-bold tracking-wide uppercase text-[10px]">
-              <Zap className="w-3 h-3 mr-2 fill-current" />
-              AI Visibility Platform for Startups
-            </Badge>
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-8">
-              Do AI assistants<br />
-              <span className="bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent italic">
-                know your product?
-              </span>
-            </h1>
-            <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
-              Check if ChatGPT, Claude, Gemini, and Perplexity recommend your product.
-              Track mentions, optimize your content, and monitor social buzz — all in one platform.
+        <section className={styles.hero}>
+          <div className={styles.heroIntro}>
+            <p className={styles.eyebrow}>
+              <span>AI brand intelligence</span>
+              <span>Evidence retained</span>
             </p>
-            <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link href="/check">
-                <Button size="lg" className="h-14 px-10 text-base font-bold shadow-2xl shadow-primary/30">
-                  <Search className="mr-2 h-5 w-5" />
-                  Free AI Brand Check
-                </Button>
+            <h1>See how AI describes your brand—and why.</h1>
+            <p className={styles.heroCopy}>
+              MentionPilot shows founders and marketing teams the answers behind AI visibility, the competitors shaping the narrative, and the source gaps worth fixing next.
+            </p>
+            <div className={styles.heroActions}>
+              <Link href="/check" className={styles.primaryCta}>
+                Run a free brand check <Arrow />
               </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" className="h-14 px-10 text-base font-bold border-primary/20 hover:bg-primary/5">
-                  Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+              <Link href="/login" className={styles.textCta}>
+                Open the workspace <span aria-hidden="true">↗</span>
               </Link>
             </div>
-            <p className="mt-6 text-sm text-muted-foreground font-medium">
-              No credit card required. BYOK — bring your own API keys.
+            <p className={styles.heroFootnote}>
+              No signup for the first check. The observed answer stays visible behind the result.
             </p>
           </div>
-        </section>
 
-        {/* Stats */}
-        <section className="border-y border-border bg-muted/20 backdrop-blur-sm">
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-4 py-16 sm:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center group">
-                <div className="text-4xl font-black text-primary group-hover:scale-110 transition-transform">{stat.value}</div>
-                <div className="mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Features */}
-        <section id="features" className="mx-auto max-w-6xl px-4 py-32">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
-              Everything you need for AI visibility
-            </h2>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Monitor, optimize, and improve how AI assistants talk about your product.
-              What competitors charge $250/mo for, we give you for free.
-            </p>
-          </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border-border/40 bg-card/50 backdrop-blur hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all group">
-                <CardHeader>
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform">
-                    <feature.icon className="h-7 w-7" />
-                  </div>
-                  <CardTitle className="text-xl font-bold">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* How It Works */}
-        <section className="border-y border-border bg-muted/20 py-32">
-          <div className="mx-auto max-w-4xl px-4">
-            <h2 className="text-center text-4xl font-black tracking-tight sm:text-5xl mb-24">
-              How it works
-            </h2>
-            <div className="grid gap-12 sm:grid-cols-3">
-              {[
-                { step: "1", title: "Configure", description: "Add your brand name, URL, competitors, and API keys. We support OpenAI, Anthropic, Google, and Perplexity." },
-                { step: "2", title: "Check", description: "Add prompts users might ask AI, or let us auto-generate them. Click Run — we query all platforms in parallel." },
-                { step: "3", title: "Optimize", description: "See which platforms mention you, your sentiment and position. Use GEO tools and AXP to improve your visibility." },
-              ].map((item) => (
-                <div key={item.step} className="text-center group">
-                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-black shadow-xl shadow-primary/20 group-hover:scale-110 transition-transform">
-                    {item.step}
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+          <div className={styles.heroEvidence}>
+            <div className={styles.paperShadow} aria-hidden="true" />
+            <article className={styles.evidenceSheet} aria-label="Illustrative MentionPilot evidence record">
+              <div className={styles.sheetHeader}>
+                <div>
+                  <p className={styles.docLabel}>Observed answer / 04</p>
+                  <p className={styles.docId}>MP—QUESTION—0042</p>
                 </div>
-              ))}
+                <span className={styles.demoStamp}>Illustrative record</span>
+              </div>
+
+              <div className={styles.questionBlock}>
+                <span>Discovery question</span>
+                <p>“What tools help a SaaS team understand how AI assistants recommend its product?”</p>
+              </div>
+
+              <div className={styles.answerBlock}>
+                <div className={styles.providerLine}>
+                  <span className={styles.providerDot} />
+                  <strong>Configured assistant</strong>
+                  <span>successful check</span>
+                </div>
+                <p>
+                  Teams can use specialised AI visibility tools to track whether a product is named, which alternatives appear beside it, and what source material seems to support the answer.
+                </p>
+                <p className={styles.highlightedLine}>
+                  MentionPilot keeps the prompt, answer, citations, and competitive position together for later review.
+                </p>
+              </div>
+
+              <div className={styles.marginNote}>
+                <span>Why this matters</span>
+                The claim can be inspected, compared, and checked again.
+              </div>
+
+              <div className={styles.receipt}>
+                <SourceMark />
+                <div>
+                  <span>Source receipt</span>
+                  <strong>1 answer · 3 citations · complete</strong>
+                </div>
+                <time dateTime="2026-09-14T14:12:00+05:30">14 SEP · 14:12 IST</time>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className={styles.proofStrip} aria-label="Product proof">
+          <p>Not another visibility score.</p>
+          <div className={styles.proofRule} />
+          <p>Every result opens back into its evidence.</p>
+        </section>
+
+        <section className={styles.evidenceSection} id="evidence">
+          <div className={styles.sectionLead}>
+            <p className={styles.sectionIndex}>01 / Evidence, not theatre</p>
+            <h2>A result you can interrogate.</h2>
+            <p>
+              Scores make change easy to track. Evidence makes the score useful. MentionPilot keeps the material you need to understand what happened and decide what to do.
+            </p>
+          </div>
+          <div className={styles.ledger}>
+            {retainedEvidence.map((item) => (
+              <article key={item.number} className={styles.ledgerRow}>
+                <span className={styles.ledgerNumber}>{item.number}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <span className={styles.ledgerTick} aria-hidden="true">✓</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.workflowSection} id="how-it-works">
+          <div className={styles.workflowIntro}>
+            <p className={styles.sectionIndex}>02 / Working method</p>
+            <h2>Follow the answer back to the source.</h2>
+            <p>
+              MentionPilot connects monitoring and improvement in one repeatable loop, without hiding failed checks or pretending a heuristic is a fact.
+            </p>
+            <div className={styles.pencilNote}>
+              <span aria-hidden="true">↳</span>
+              The goal is a better answer, not a prettier chart.
+            </div>
+          </div>
+          <ol className={styles.workflowList}>
+            {workflow.map((item) => (
+              <li key={item.index}>
+                <span className={styles.workflowNumber}>{item.index}</span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </div>
+                <span className={styles.workflowNote}>{item.note}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className={styles.caseSection}>
+          <div className={styles.caseGrid}>
+            <div className={styles.caseStatement}>
+              <p className={styles.sectionIndex}>03 / One signal room</p>
+              <blockquote>
+                “Your brand story is already being assembled from evidence across the web. The question is whether you can see the assembly.”
+              </blockquote>
+            </div>
+            <div className={styles.caseFile}>
+              <div className={styles.caseTab}>CASE / SOURCE READINESS</div>
+              <div className={styles.caseTopline}>
+                <div>
+                  <span>Finding</span>
+                  <strong>Competitors have clearer comparison evidence</strong>
+                </div>
+                <span className={styles.openStatus}>Open</span>
+              </div>
+              <div className={styles.caseBody}>
+                <div>
+                  <span className={styles.caseLabel}>Observed pattern</span>
+                  <p>Alternative products appear with specific use cases; this brand appears only in broad category language.</p>
+                </div>
+                <div>
+                  <span className={styles.caseLabel}>Suggested move</span>
+                  <p>Publish one sourced comparison page that states who the product is for, where it differs, and what proof supports the distinction.</p>
+                </div>
+              </div>
+              <div className={styles.caseFooter}>
+                <span>Heuristic recommendation</span>
+                <span>Evidence attached · history retained</span>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* AXP Section */}
-        <section className="mx-auto max-w-6xl px-4 py-32">
-          <div className="grid gap-16 lg:grid-cols-2 items-center">
-            <div>
-              <Badge variant="outline" className="mb-6 border-primary/20 bg-primary/5 text-primary">AXP Shadow Site</Badge>
-              <h2 className="text-4xl font-black tracking-tight sm:text-5xl leading-tight">
-                Serve AI-optimized content to bots
-              </h2>
-              <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-                Your pages have 124K tokens of navigation, scripts, styles, and noise.
-                AI bots waste context parsing all of it. AXP strips it down to ~1.2K tokens
-                of pure signal — a 99% reduction.
-              </p>
-              <ul className="mt-10 space-y-4">
-                {[
-                  "Crawl your site and auto-generate optimized versions",
-                  "Deploy as Cloudflare Worker or Vercel middleware",
-                  "Humans see your normal site, bots see the optimized version",
-                  "Track which AI bots visit and how often",
-                  "Edit optimized content from the dashboard",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 font-medium">
-                    <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center mt-0.5 shrink-0">
-                      <Check className="h-3 w-3 text-green-500" />
-                    </div>
-                    {item}
-                  </li>
-                ))}
+        <section className={styles.scopeSection}>
+          <div className={styles.scopeHeader}>
+            <p className={styles.sectionIndex}>04 / What the workspace connects</p>
+            <h2>Assistant answers in. Defensible action out.</h2>
+          </div>
+          <div className={styles.scopeColumns}>
+            <article>
+              <span className={styles.scopeNumber}>A</span>
+              <h3>AI answer evidence</h3>
+              <p>Track prompts, responses, citations, provider status, mention position, and changes over time across the assistants you configure.</p>
+              <ul>
+                <li>Exact response retained</li>
+                <li>Failures remain explicit</li>
+                <li>Competitors compared in context</li>
               </ul>
-              <div className="mt-12">
-                <Link href="/login">
-                  <Button size="lg" className="h-14 px-10 font-bold shadow-xl shadow-primary/20">
-                    Set Up AXP <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <Card className="bg-muted/30 border-dashed border-border p-8 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardContent className="p-0 font-mono text-[13px] leading-relaxed text-muted-foreground relative">
-                <div className="text-primary font-bold mb-4"># YourProduct</div>
-                <div className="mb-2 opacity-60">URL: https://yourproduct.com</div>
-                <div className="mb-6 text-foreground font-medium">&gt; The all-in-one platform for...</div>
-                <div className="text-primary font-bold mb-2">## Key Features</div>
-                <div className="space-y-1">
-                  <div>- Real-time analytics dashboard</div>
-                  <div>- Team collaboration tools</div>
-                  <div>- API with 99.9% uptime</div>
-                </div>
-                <div className="mt-6 text-primary font-bold mb-2">## Pricing</div>
-                <div className="space-y-1">
-                  <div>- Free tier: up to 1,000 events</div>
-                  <div>- Pro: $29/mo unlimited</div>
-                </div>
-                <div className="mt-8 pt-8 border-t border-dashed border-border flex items-center justify-between">
-                  <div className="text-green-500 font-bold animate-pulse">124K tokens → 1.2K tokens</div>
-                  <div className="text-xs font-bold bg-green-500/10 text-green-500 px-3 py-1 rounded-full">99% reduction</div>
-                </div>
-              </CardContent>
-            </Card>
+            </article>
+            <article>
+              <span className={styles.scopeNumber}>B</span>
+              <h3>Source-readiness work</h3>
+              <p>Connect observed narrative gaps to better canonical summaries, FAQs, proof, structured data, comparisons, and follow-up tasks.</p>
+              <ul>
+                <li>Heuristics clearly labelled</li>
+                <li>Evidence attached to tasks</li>
+                <li>Social findings link to source</li>
+              </ul>
+            </article>
           </div>
+        </section>
+
+        <section className={styles.finalSection}>
+          <div className={styles.finalGrid}>
+            <div>
+              <p className={styles.finalEyebrow}>Your first case file is free</p>
+              <h2>Bring the brand question you cannot answer from a chart.</h2>
+            </div>
+            <div className={styles.finalAction}>
+              <p>Run a public check, inspect the underlying answer, and decide whether the ongoing workspace earns a place in your process.</p>
+              <Link href="/check" className={styles.finalCta}>
+                Check your brand <Arrow />
+              </Link>
+              <span>No signup required for the first check.</span>
+            </div>
+          </div>
+          <div className={styles.finalMark} aria-hidden="true"><Mark /></div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-muted/20 py-16">
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary mb-8 block">
-            MentionPilot
-          </Link>
-          <div className="flex justify-center gap-8 mb-8 text-sm font-medium text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">Twitter</a>
-            <a href="#" className="hover:text-primary transition-colors">GitHub</a>
-            <a href="#" className="hover:text-primary transition-colors">Discord</a>
-          </div>
-          <p className="text-xs text-muted-foreground opacity-60">
-            &copy; {new Date().getFullYear()} MentionPilot. All rights reserved.
-          </p>
+      <footer className={styles.footer}>
+        <Link href="/" className={styles.footerBrand}>MentionPilot</Link>
+        <p>Evidence-first brand intelligence for AI assistants.</p>
+        <div>
+          <Link href="/blog">Research</Link>
+          <Link href="/check">Free check</Link>
+          <Link href="/login">Sign in</Link>
         </div>
       </footer>
     </div>

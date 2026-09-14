@@ -18,6 +18,10 @@ export interface BrandConfigRow {
   brand_aliases: string;      // JSON text
   brand_url: string | null;
   competitors: string;        // JSON text
+  keywords: string;           // JSON text
+  target_customer: string | null;
+  monitoring_topics: string;  // JSON text
+  reddit_communities: string; // JSON text
   platforms: string;           // JSON text
   openai_api_key: string | null;
   anthropic_api_key: string | null;
@@ -35,8 +39,11 @@ export interface ResultRow {
   check_id: string;
   project_id: string;
   prompt_id: string;
+  prompt_text: string | null;
   platform: string;
   model: string;
+  provider_status: string;
+  error_message: string | null;
   response_text: string;
   brand_mentioned: number;    // 0 | 1
   brand_sentiment: string | null;
@@ -83,6 +90,10 @@ export interface DatabaseSchema {
     brand_aliases?: string[];
     brand_url?: string;
     competitors?: Array<{ name: string; url?: string }>;
+    keywords?: string[];
+    target_customer?: string;
+    monitoring_topics?: string[];
+    reddit_communities?: string[];
     platforms?: AIPlatform[];
     openai_api_key?: string;
     anthropic_api_key?: string;
@@ -123,7 +134,7 @@ export interface DatabaseSchema {
     input: Partial<{
       status: 'running' | 'completed' | 'failed';
       completed_queries: number;
-      brand_mention_rate: number;
+      brand_mention_rate: number | null;
       summary: string;
       completed_at: string;
     }>,
@@ -139,8 +150,11 @@ export interface DatabaseSchema {
     check_id: string;
     project_id: string;
     prompt_id: string;
+    prompt_text?: string;
     platform: AIPlatform;
     model: string;
+    provider_status?: 'success' | 'error';
+    error_message?: string;
     response_text: string;
     brand_mentioned: boolean;
     brand_sentiment?: Sentiment;

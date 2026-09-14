@@ -11,13 +11,17 @@ cpu_ms = 30000
 
 [vars]
 ENVIRONMENT = "production"
-# Free check — single OpenAI-compatible endpoint, set in Cloudflare dashboard
-# FREE_AI_ENDPOINT_URL = ""
+# Free check — Fleet's OpenAI-compatible free-AI gateway. The API key is a
+# Wrangler secret sourced from Infisical and is never stored in this file.
+FREE_AI_ENDPOINT_URL = "https://ai-gateway.sassmaker.com/v1/chat/completions"
+FREE_AI_MODEL = "auto"
 # FREE_AI_API_KEY = ""
-# FREE_AI_MODEL = ""
 # Legacy free check keys (deprecated — use FREE_AI_* instead)
 # OPENAI_API_KEY = ""
 # GOOGLE_API_KEY = ""
+
+[ai]
+binding = "AI"
 
 [triggers]
 crons = ["0 6 * * *"]
@@ -25,5 +29,5 @@ crons = ["0 6 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "mentionpilot-db"
-database_id = "628e1584-aa4a-4181-96ad-3fd234c88498"
+database_id = "58f25b8f-ebe2-4117-8afc-ede08ec37430"
 migrations_dir = "../../packages/db/migrations"

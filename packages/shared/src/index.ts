@@ -34,6 +34,10 @@ export interface BrandConfigRecord {
   brand_aliases: string[];
   brand_url: string | null;
   competitors: Competitor[];
+  keywords: string[];
+  target_customer: string | null;
+  monitoring_topics: string[];
+  reddit_communities: string[];
   platforms: AIPlatform[];
   has_openai_key: boolean;
   has_anthropic_key: boolean;
@@ -77,8 +81,11 @@ export interface ResultRecord {
   check_id: string;
   project_id: string;
   prompt_id: string;
+  prompt_text: string | null;
   platform: AIPlatform;
   model: string;
+  provider_status: 'success' | 'error';
+  error_message: string | null;
   response_text: string;
   brand_mentioned: boolean;
   brand_sentiment: Sentiment | null;
@@ -97,6 +104,10 @@ export interface CreateBrandConfigRequest {
   brand_aliases?: string[];
   brand_url?: string;
   competitors?: Competitor[];
+  keywords?: string[];
+  target_customer?: string;
+  monitoring_topics?: string[];
+  reddit_communities?: string[];
   platforms?: AIPlatform[];
   openai_api_key?: string;
   anthropic_api_key?: string;
@@ -230,6 +241,101 @@ export interface HNMention {
   type: 'story' | 'comment';
   created_at: string;
   hn_url: string;
+}
+
+// ─── Brand Intelligence Inbox ─────────────────────────────────────
+
+export type FindingSource = 'hackernews' | 'reddit_insights';
+export type FindingStatus = 'new' | 'reviewed' | 'dismissed' | 'resolved';
+export type FindingAction =
+  | 'created'
+  | 'reviewed'
+  | 'dismissed'
+  | 'resolved'
+  | 'reopened'
+  | 'task_created'
+  | 'task_completed'
+  | 'task_reopened';
+export type SourceSyncStatus = 'ok' | 'partial' | 'failed' | 'unavailable' | 'planned';
+
+export interface FindingRecord {
+  id: string;
+  project_id: string;
+  source: FindingSource;
+  source_record_id: string;
+  source_name: string;
+  title: string;
+  content: string | null;
+  url: string;
+  author: string | null;
+  published_at: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+  engagement_score: number | null;
+  comment_count: number | null;
+  relevance_score: number;
+  intent: import('./brand-intelligence').CommunityOpportunityIntent;
+  matched_keywords: string[];
+  status: FindingStatus;
+}
+
+export interface FindingHistoryRecord {
+  id: string;
+  finding_id: string;
+  project_id: string;
+  action: FindingAction;
+  note: string | null;
+  created_at: string;
+  finding_title?: string;
+  finding_source?: FindingSource;
+}
+
+export interface FindingTaskRecord {
+  id: string;
+  finding_id: string;
+  project_id: string;
+  title: string;
+  status: 'open' | 'completed';
+  created_at: string;
+  completed_at: string | null;
+  finding_title?: string;
+  finding_source?: FindingSource;
+}
+
+export interface SourceCoverageRecord {
+  source: 'hackernews' | 'reddit_insights' | 'f5bot' | 'google_trends';
+  label: string;
+  status: SourceSyncStatus;
+  records_seen: number;
+  records_matched: number;
+  source_updated_at: string | null;
+  checked_at: string | null;
+  message: string;
+}
+
+export interface SignalInboxSummary {
+  total: number;
+  new: number;
+  reviewed: number;
+  resolved: number;
+  dismissed: number;
+}
+
+export interface SignalInboxMetrics {
+  useful_finding_rate: number | null;
+  actionable_findings: number;
+  resolution_rate: number | null;
+  refresh_count: number;
+}
+
+export interface SignalInboxResponse {
+  findings: FindingRecord[];
+  summary: SignalInboxSummary;
+  coverage: SourceCoverageRecord[];
+  history: FindingHistoryRecord[];
+  tasks: FindingTaskRecord[];
+  metrics: SignalInboxMetrics;
+  perception: ReturnType<typeof import('./brand-intelligence').clusterCompetitorPerception>;
 }
 
 export * from './brand-intelligence';

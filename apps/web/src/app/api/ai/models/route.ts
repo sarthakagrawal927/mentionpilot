@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleModelsRequest } from "@saas-maker/ai/server";
+import { discoverAvailableModels } from "@/lib/ai-models";
 
 /**
  * Model discovery proxy — fetches available models from an OpenAI-compatible endpoint.
@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await handleModelsRequest({
+    const models = await discoverAvailableModels({
       endpointUrl: body.endpointUrl,
       apiKey: body.apiKey,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({ models });
   } catch (err) {
     return NextResponse.json(
       { error: (err as Error).message },

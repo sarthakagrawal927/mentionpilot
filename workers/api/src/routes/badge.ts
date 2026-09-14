@@ -39,7 +39,7 @@ badge.get('/:projectId', async (c) => {
 
   // Get per-platform results
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT brand_mentioned, brand_sentiment, brand_position, brand_cited, platform FROM results WHERE check_id = ?`
+    `SELECT brand_mentioned, brand_sentiment, brand_position, brand_cited, platform FROM results WHERE check_id = ? AND provider_status = 'success'`
   ).bind(latestCheck.id as string).all();
 
   if (checkResults.length === 0) return c.json({ error: 'No results' }, 404);
@@ -105,7 +105,7 @@ badge.get('/:projectId', async (c) => {
     mention_rate: Math.round(mentionRate * 100) / 100,
     platform_details,
     last_checked: latestCheck.created_at,
-    dashboard_url: 'https://mentionpilot-web.vercel.app/dashboard',
+    dashboard_url: 'https://mention.highsignal.app/dashboard',
     cached_at: new Date().toISOString(),
   }, 200, {
     'Cache-Control': 'public, max-age=3600, s-maxage=3600',

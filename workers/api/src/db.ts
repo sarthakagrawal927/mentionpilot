@@ -22,7 +22,8 @@ export function getDb(d1: D1Database) {
 
     async getSessionByTokenHash(tokenHash: string) {
       return await d1.prepare(
-        `SELECT user_id, expires_at FROM sessions WHERE token_hash = ? AND expires_at > datetime('now')`
+        `SELECT user_id, expires_at FROM sessions
+         WHERE token_hash = ? AND julianday(expires_at) > julianday('now')`
       ).bind(tokenHash).first() as { user_id: string; expires_at: string } | null;
     },
 
@@ -87,17 +88,21 @@ export function getDb(d1: D1Database) {
     async upsertBrandConfig(input: {
       id: string; project_id: string; brand_name: string;
       brand_aliases: string; brand_url: string | null;
-      competitors: string; platforms: string;
+      competitors: string; keywords: string; target_customer: string | null;
+      monitoring_topics: string; reddit_communities: string; platforms: string;
       openai_api_key: string | null; anthropic_api_key: string | null;
       google_api_key: string | null; perplexity_api_key: string | null;
       ai_endpoint_url: string | null; ai_api_key: string | null; ai_model: string | null;
     }) {
       await d1.prepare(
-        `INSERT INTO brand_configs (id, project_id, brand_name, brand_aliases, brand_url, competitors, platforms, openai_api_key, anthropic_api_key, google_api_key, perplexity_api_key, ai_endpoint_url, ai_api_key, ai_model)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO brand_configs (id, project_id, brand_name, brand_aliases, brand_url, competitors, keywords, target_customer, monitoring_topics, reddit_communities, platforms, openai_api_key, anthropic_api_key, google_api_key, perplexity_api_key, ai_endpoint_url, ai_api_key, ai_model)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (project_id) DO UPDATE SET
            brand_name = EXCLUDED.brand_name, brand_aliases = EXCLUDED.brand_aliases,
            brand_url = EXCLUDED.brand_url, competitors = EXCLUDED.competitors,
+           keywords = EXCLUDED.keywords, target_customer = EXCLUDED.target_customer,
+           monitoring_topics = EXCLUDED.monitoring_topics,
+           reddit_communities = EXCLUDED.reddit_communities,
            platforms = EXCLUDED.platforms,
            openai_api_key = COALESCE(EXCLUDED.openai_api_key, brand_configs.openai_api_key),
            anthropic_api_key = COALESCE(EXCLUDED.anthropic_api_key, brand_configs.anthropic_api_key),
@@ -109,7 +114,8 @@ export function getDb(d1: D1Database) {
            updated_at = datetime('now')`
       ).bind(
         input.id, input.project_id, input.brand_name, input.brand_aliases,
-        input.brand_url, input.competitors, input.platforms,
+        input.brand_url, input.competitors, input.keywords, input.target_customer,
+        input.monitoring_topics, input.reddit_communities, input.platforms,
         input.openai_api_key, input.anthropic_api_key, input.google_api_key, input.perplexity_api_key,
         input.ai_endpoint_url, input.ai_api_key, input.ai_model
       ).run();
@@ -193,11 +199,12 @@ export function getDb(d1: D1Database) {
     // --- Results ---
     async createResult(input: Record<string, unknown>) {
       await d1.prepare(
-        `INSERT INTO results (id, check_id, project_id, prompt_id, platform, model, response_text, brand_mentioned, brand_sentiment, brand_position, competitors_mentioned, citations, brand_cited, latency_ms)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO results (id, check_id, project_id, prompt_id, prompt_text, platform, model, provider_status, error_message, response_text, brand_mentioned, brand_sentiment, brand_position, competitors_mentioned, citations, brand_cited, latency_ms)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         input.id, input.check_id, input.project_id, input.prompt_id,
-        input.platform, input.model, input.response_text,
+        input.prompt_text ?? null, input.platform, input.model,
+        input.provider_status ?? 'success', input.error_message ?? null, input.response_text,
         input.brand_mentioned ? 1 : 0, input.brand_sentiment, input.brand_position,
         input.competitors_mentioned, input.citations,
         input.brand_cited ? 1 : 0, input.latency_ms
@@ -210,6 +217,229 @@ export function getDb(d1: D1Database) {
         `SELECT * FROM results WHERE check_id = ? ORDER BY created_at ASC`
       ).bind(checkId).all();
       return results as any[];
+    },
+
+    // --- Brand Intelligence Findings ---
+    async upsertFinding(input: {
+      id: string; project_id: string; source: string; source_record_id: string;
+      source_name: string; title: string; content: string | null; url: string;
+      author: string | null; published_at: string | null;
+      engagement_score: number | null; comment_count: number | null;
+      relevance_score: number; intent: string; matched_keywords: string;
+    }) {
+      const { meta } = await d1.prepare(
+        `INSERT OR IGNORE INTO findings
+          (id, project_id, source, source_record_id, source_name, title, content, url,
+           author, published_at, engagement_score, comment_count, relevance_score,
+           intent, matched_keywords)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        input.id, input.project_id, input.source, input.source_record_id,
+        input.source_name, input.title, input.content, input.url, input.author,
+        input.published_at, input.engagement_score, input.comment_count,
+        input.relevance_score, input.intent, input.matched_keywords
+      ).run();
+
+      const inserted = (meta.changes ?? 0) > 0;
+      if (!inserted) {
+        await d1.prepare(
+          `UPDATE findings SET
+             source_name = ?, title = ?, content = ?, url = ?, author = ?,
+             published_at = ?, engagement_score = ?, comment_count = ?,
+             relevance_score = ?, intent = ?, matched_keywords = ?,
+             last_seen_at = datetime('now')
+           WHERE project_id = ? AND source = ? AND source_record_id = ?`
+        ).bind(
+          input.source_name, input.title, input.content, input.url, input.author,
+          input.published_at, input.engagement_score, input.comment_count,
+          input.relevance_score, input.intent, input.matched_keywords,
+          input.project_id, input.source, input.source_record_id
+        ).run();
+      } else {
+        await d1.prepare(
+          `INSERT INTO finding_history (id, finding_id, project_id, action)
+           VALUES (?, ?, ?, 'created')`
+        ).bind(crypto.randomUUID(), input.id, input.project_id).run();
+      }
+
+      return await d1.prepare(
+        `SELECT * FROM findings WHERE project_id = ? AND source = ? AND source_record_id = ?`
+      ).bind(input.project_id, input.source, input.source_record_id).first() as any;
+    },
+
+    async listFindings(
+      projectId: string,
+      filters: { status?: string; source?: string; limit?: number } = {}
+    ) {
+      const clauses = ['project_id = ?'];
+      const values: unknown[] = [projectId];
+      if (filters.status) { clauses.push('status = ?'); values.push(filters.status); }
+      if (filters.source) { clauses.push('source = ?'); values.push(filters.source); }
+      values.push(Math.min(Math.max(filters.limit ?? 100, 1), 200));
+      const { results } = await d1.prepare(
+        `SELECT * FROM findings WHERE ${clauses.join(' AND ')}
+         ORDER BY CASE status WHEN 'new' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END,
+                  relevance_score DESC, published_at DESC
+         LIMIT ?`
+      ).bind(...values).all();
+      return results as any[];
+    },
+
+    async getFindingSummary(projectId: string) {
+      const row = await d1.prepare(
+        `SELECT COUNT(*) AS total,
+                SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_count,
+                SUM(CASE WHEN status = 'reviewed' THEN 1 ELSE 0 END) AS reviewed_count,
+                SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS resolved_count,
+                SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END) AS dismissed_count
+         FROM findings WHERE project_id = ?`
+      ).bind(projectId).first();
+      return {
+        total: Number(row?.total ?? 0),
+        new: Number(row?.new_count ?? 0),
+        reviewed: Number(row?.reviewed_count ?? 0),
+        resolved: Number(row?.resolved_count ?? 0),
+        dismissed: Number(row?.dismissed_count ?? 0),
+      };
+    },
+
+    async getFinding(projectId: string, id: string) {
+      return await d1.prepare(
+        `SELECT * FROM findings WHERE project_id = ? AND id = ?`
+      ).bind(projectId, id).first() as any | null;
+    },
+
+    async updateFindingStatus(input: {
+      id: string; project_id: string; status: string; action: string; note?: string | null;
+    }) {
+      const existing = await d1.prepare(
+        `SELECT * FROM findings WHERE id = ? AND project_id = ?`
+      ).bind(input.id, input.project_id).first() as any | null;
+      if (!existing) return null;
+      if (existing.status === input.status) return existing;
+
+      await d1.prepare(
+        `UPDATE findings SET status = ? WHERE id = ? AND project_id = ?`
+      ).bind(input.status, input.id, input.project_id).run();
+      await d1.prepare(
+        `INSERT INTO finding_history (id, finding_id, project_id, action, note)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(
+        crypto.randomUUID(), input.id, input.project_id, input.action, input.note ?? null
+      ).run();
+      return await d1.prepare(`SELECT * FROM findings WHERE id = ?`).bind(input.id).first() as any;
+    },
+
+    async listFindingHistory(projectId: string, limit = 50) {
+      const { results } = await d1.prepare(
+        `SELECT h.*, f.title AS finding_title, f.source AS finding_source
+         FROM finding_history h
+         JOIN findings f ON f.id = h.finding_id
+         WHERE h.project_id = ? ORDER BY h.created_at DESC LIMIT ?`
+      ).bind(projectId, Math.min(Math.max(limit, 1), 100)).all();
+      return results as any[];
+    },
+
+    async createFindingTask(input: {
+      id: string; finding_id: string; project_id: string; title: string;
+    }) {
+      const finding = await d1.prepare(
+        `SELECT id FROM findings WHERE id = ? AND project_id = ?`
+      ).bind(input.finding_id, input.project_id).first();
+      if (!finding) return null;
+      await d1.prepare(
+        `INSERT INTO finding_tasks (id, finding_id, project_id, title) VALUES (?, ?, ?, ?)`
+      ).bind(input.id, input.finding_id, input.project_id, input.title).run();
+      await d1.prepare(
+        `INSERT INTO finding_history (id, finding_id, project_id, action, note)
+         VALUES (?, ?, ?, 'task_created', ?)`
+      ).bind(crypto.randomUUID(), input.finding_id, input.project_id, input.title).run();
+      return await d1.prepare(`SELECT * FROM finding_tasks WHERE id = ?`).bind(input.id).first() as any;
+    },
+
+    async listFindingTasks(projectId: string, limit = 50) {
+      const { results } = await d1.prepare(
+        `SELECT t.*, f.title AS finding_title, f.source AS finding_source
+         FROM finding_tasks t
+         JOIN findings f ON f.id = t.finding_id
+         WHERE t.project_id = ?
+         ORDER BY CASE t.status WHEN 'open' THEN 0 ELSE 1 END, t.created_at DESC
+         LIMIT ?`
+      ).bind(projectId, Math.min(Math.max(limit, 1), 100)).all();
+      return results as any[];
+    },
+
+    async updateFindingTaskStatus(input: {
+      id: string; project_id: string; status: 'open' | 'completed';
+    }) {
+      const existing = await d1.prepare(
+        `SELECT * FROM finding_tasks WHERE id = ? AND project_id = ?`
+      ).bind(input.id, input.project_id).first() as any | null;
+      if (!existing) return null;
+      if (existing.status === input.status) return existing;
+      await d1.prepare(
+        `UPDATE finding_tasks SET status = ?,
+           completed_at = CASE WHEN ? = 'completed' THEN datetime('now') ELSE NULL END
+         WHERE id = ? AND project_id = ?`
+      ).bind(input.status, input.status, input.id, input.project_id).run();
+      await d1.prepare(
+        `INSERT INTO finding_history (id, finding_id, project_id, action, note)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(
+        crypto.randomUUID(), existing.finding_id, input.project_id,
+        input.status === 'completed' ? 'task_completed' : 'task_reopened', existing.title
+      ).run();
+      return await d1.prepare(`SELECT * FROM finding_tasks WHERE id = ?`).bind(input.id).first() as any;
+    },
+
+    async recordSourceSync(input: {
+      id: string; refresh_id: string; project_id: string; source: string; status: string;
+      records_seen: number; records_matched: number;
+      source_updated_at: string | null; message: string;
+    }) {
+      await d1.prepare(
+        `INSERT INTO source_syncs
+          (id, refresh_id, project_id, source, status, records_seen, records_matched, source_updated_at, message)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        input.id, input.refresh_id, input.project_id, input.source, input.status,
+        input.records_seen, input.records_matched, input.source_updated_at, input.message
+      ).run();
+    },
+
+    async listLatestSourceSyncs(projectId: string) {
+      const { results } = await d1.prepare(
+        `SELECT s.* FROM source_syncs s
+         WHERE s.project_id = ?
+           AND s.id = (
+             SELECT latest.id FROM source_syncs latest
+             WHERE latest.project_id = s.project_id AND latest.source = s.source
+             ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1
+           )
+         ORDER BY s.source ASC`
+      ).bind(projectId).all();
+      return results as any[];
+    },
+
+    async getSignalRefreshCount(projectId: string) {
+      const row = await d1.prepare(
+        `SELECT COUNT(*) AS total FROM signal_refreshes WHERE project_id = ?`
+      ).bind(projectId).first();
+      return Number(row?.total ?? 0);
+    },
+
+    async countRecentSignalRefreshes(projectId: string, sinceMinutes: number) {
+      const row = await d1.prepare(
+        `SELECT COUNT(*) AS total FROM signal_refreshes
+         WHERE project_id = ? AND created_at > datetime('now', '-' || ? || ' minutes')`
+      ).bind(projectId, sinceMinutes).first();
+      return Number(row?.total ?? 0);
+    },
+
+    async beginSignalRefresh(id: string, projectId: string) {
+      await d1.prepare(
+        `INSERT INTO signal_refreshes (id, project_id) VALUES (?, ?)`
+      ).bind(id, projectId).run();
     },
 
     // --- Free Checks ---
@@ -238,7 +468,10 @@ export function getDb(d1: D1Database) {
 
     async countRecentFreeChecks(ipAddress: string, sinceMinutes: number = 60) {
       const row = await d1.prepare(
-        `SELECT COUNT(*) AS total FROM free_checks WHERE ip_address = ? AND created_at > datetime('now', '-' || ? || ' minutes')`
+        `SELECT COUNT(*) AS total FROM free_checks
+         WHERE ip_address = ?
+           AND status IN ('running', 'completed')
+           AND created_at > datetime('now', '-' || ? || ' minutes')`
       ).bind(ipAddress, sinceMinutes).first();
       return (row?.total as number) || 0;
     },

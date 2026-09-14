@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@mentionpilot/shared": "workspace:*",
-    "@saas-maker/ai": "0.1.0",
     "@saas-maker/ops": "^0.1.1",
     "hono": "^4.12.15"
   },

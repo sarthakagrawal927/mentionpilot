@@ -33,7 +33,7 @@ analytics.get('/:projectId/share-of-voice', async (c) => {
   if (!latestCheck) return c.json({ brand: 0, competitors: {}, total: 0 });
 
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT brand_mentioned, competitors_mentioned FROM results WHERE check_id = ?`
+    `SELECT brand_mentioned, competitors_mentioned FROM results WHERE check_id = ? AND provider_status = 'success'`
   ).bind(latestCheck.id as string).all();
 
   const total = checkResults.length;
@@ -73,7 +73,7 @@ analytics.get('/:projectId/platform-breakdown', async (c) => {
   if (!latestCheck) return c.json({ platforms: {} });
 
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT platform, brand_mentioned FROM results WHERE check_id = ?`
+    `SELECT platform, brand_mentioned FROM results WHERE check_id = ? AND provider_status = 'success'`
   ).bind(latestCheck.id as string).all();
 
   const platformStats: Record<string, { total: number; mentioned: number }> = {};
@@ -104,7 +104,7 @@ analytics.get('/:projectId/sentiment-breakdown', async (c) => {
   if (!latestCheck) return c.json({ positive: 0, neutral: 0, negative: 0 });
 
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT brand_sentiment FROM results WHERE check_id = ? AND brand_mentioned = 1`
+    `SELECT brand_sentiment FROM results WHERE check_id = ? AND provider_status = 'success' AND brand_mentioned = 1`
   ).bind(latestCheck.id as string).all();
 
   const counts = { positive: 0, neutral: 0, negative: 0 };
@@ -130,7 +130,7 @@ analytics.get('/:projectId/citations', async (c) => {
   if (!latestCheck) return c.json({ citations: [] });
 
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT citations FROM results WHERE check_id = ?`
+    `SELECT citations FROM results WHERE check_id = ? AND provider_status = 'success'`
   ).bind(latestCheck.id as string).all();
 
   const domainCounts: Record<string, number> = {};
@@ -173,7 +173,7 @@ analytics.get('/:projectId/citation-analysis', async (c) => {
 
   for (const check of checks.results) {
     const { results: checkResults } = await c.env.DB.prepare(
-      `SELECT citations FROM results WHERE check_id = ?`
+      `SELECT citations FROM results WHERE check_id = ? AND provider_status = 'success'`
     ).bind(check.id as string).all();
 
     let brandCited = false;
@@ -240,14 +240,24 @@ analytics.get('/:projectId/visibility-score', async (c) => {
     `SELECT id, brand_mention_rate FROM checks WHERE project_id = ? AND status = 'completed' ORDER BY created_at DESC LIMIT 1`
   ).bind(result.project.id).first();
 
-  if (!latestCheck) return c.json({ score: 0, breakdown: { mention: 0, sentiment: 0, position: 0, citation: 0, reach: 0 }, grade: 'N/A' });
+  if (!latestCheck) return c.json({
+    score: 0,
+    breakdown: { mention: 0, sentiment: 0, position: 0, citation: 0, reach: 0 },
+    max: { mention: 30, sentiment: 20, position: 20, citation: 15, reach: 15 },
+    grade: 'N/A',
+  });
 
   const { results: checkResults } = await c.env.DB.prepare(
-    `SELECT brand_mentioned, brand_sentiment, brand_position, brand_cited, platform FROM results WHERE check_id = ?`
+    `SELECT brand_mentioned, brand_sentiment, brand_position, brand_cited, platform FROM results WHERE check_id = ? AND provider_status = 'success'`
   ).bind(latestCheck.id as string).all();
 
   const total = checkResults.length;
-  if (total === 0) return c.json({ score: 0, breakdown: { mention: 0, sentiment: 0, position: 0, citation: 0, reach: 0 }, grade: 'N/A' });
+  if (total === 0) return c.json({
+    score: 0,
+    breakdown: { mention: 0, sentiment: 0, position: 0, citation: 0, reach: 0 },
+    max: { mention: 30, sentiment: 20, position: 20, citation: 15, reach: 15 },
+    grade: 'N/A',
+  });
 
   // Mention score (0-30): what % of queries mention you
   const mentionRate = (latestCheck.brand_mention_rate as number) || 0;

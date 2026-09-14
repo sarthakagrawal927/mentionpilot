@@ -44,22 +44,22 @@ const EVIDENCE_AREAS: EvidenceArea[] = [
   {
     area: 'positioning',
     strong: [/for\s+[^.]{8,80}\s+who/i, /built for/i, /not for/i],
-    clear: [/platform/i, /product/i, /workflow/i, /teams?/i],
-    weak: [/ai/i, /automate/i, /better/i],
+    clear: [/\bplatform\b/i, /\bproduct\b/i, /\bworkflow\b/i, /\bteams?\b/i],
+    weak: [/\bai\b/i, /\bautomate(?:d|s|ion)?\b/i, /\bbetter\b/i],
     task: 'State the target buyer, painful job, promised outcome, and who should not use it.',
   },
   {
     area: 'pricing',
     strong: [/\$\d+|\d+\s*\/\s*mo|\b(?:pricing starts|starter|pro|enterprise)\b/i],
-    clear: [/pricing|plans?|free trial|subscription/i],
-    weak: [/contact sales|request pricing/i],
+    clear: [/\b(?:pricing|plans?|free trial|subscription)\b/i],
+    weak: [/\b(?:contact sales|request pricing)\b/i],
     task: 'Publish clear pricing, plan boundaries, implementation cost, or why pricing is custom.',
   },
   {
     area: 'proof',
-    strong: [/case stud(y|ies)|\d+%|saved|reduced|increased|customer result/i],
-    clear: [/testimonial|customer|logo|result|proof/i],
-    weak: [/trusted by|loved by/i],
+    strong: [/\bcase stud(y|ies)\b|\d+%|\b(?:saved|reduced|increased|customer result)\b/i],
+    clear: [/\b(?:testimonial|customer|logo|result|proof)\b/i],
+    weak: [/\b(?:trusted by|loved by)\b/i],
     task: 'Add proof with numbers, customer segment, timeline, and before-and-after outcome.',
   },
   {
@@ -71,9 +71,9 @@ const EVIDENCE_AREAS: EvidenceArea[] = [
   },
   {
     area: 'docs',
-    strong: [/docs?|api|quickstart|implementation guide|integration guide/i],
-    clear: [/guide|setup|integrations?|webhook|sdk/i],
-    weak: [/learn more|how it works/i],
+    strong: [/\b(?:docs?|api|quickstart|implementation guide|integration guide)\b/i],
+    clear: [/\b(?:guide|setup|integrations?|webhook|sdk)\b/i],
+    weak: [/\b(?:learn more|how it works)\b/i],
     task: 'Publish implementation docs, integrations, setup time, and technical limits.',
   },
   {
@@ -130,16 +130,9 @@ function scoreFor(status: EvidenceScoreStatus) {
 
 export function auditBrandEvidence(input: BrandEvidenceInput): BrandEvidenceAudit {
   const normalized = normalizeInput(input);
-  const corpus = [
-    normalized.brandName,
-    normalized.brandUrl,
-    normalized.buyerMission,
-    normalized.targetSegment,
-    normalized.evidenceText,
-    ...(normalized.competitors ?? []).flatMap((competitor) => [competitor.name, competitor.url]),
-  ]
-    .filter(Boolean)
-    .join('\n');
+  // Score only observed page evidence. Profile fields describe the desired
+  // positioning; counting them as public proof would inflate the audit.
+  const corpus = normalized.evidenceText ?? '';
   const scores = EVIDENCE_AREAS.map((area): BrandEvidenceScore => {
     const status = statusFor(area, corpus);
     return {

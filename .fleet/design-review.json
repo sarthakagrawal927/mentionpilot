@@ -1,0 +1,124 @@
+{
+  "$schema": "fleet.design-review.v1",
+  "version": 1,
+  "project": "mentionpilot",
+  "target": "apps/web/src/app/page.tsx",
+  "surfaceMode": "persuade",
+  "mode": "overhaul",
+  "register": "brand",
+  "context": {
+    "product": "PRODUCT.md",
+    "design": "DESIGN.md"
+  },
+  "direction": {
+    "references": [
+      "Preline responsive landing-block structure",
+      "Owner-reviewed Signal Room direction board"
+    ],
+    "probes": [
+      {
+        "id": "signal-room",
+        "path": ".fleet/design-directions/signal-room-board.png"
+      },
+      {
+        "id": "answer-map",
+        "path": ".fleet/design-directions/signal-room-board.png"
+      },
+      {
+        "id": "proof-dossier",
+        "path": ".fleet/design-directions/signal-room-board.png"
+      }
+    ],
+    "selected": "signal-room",
+    "approval": "approved",
+    "before": "",
+    "library": {
+      "strategy": "upstream-first",
+      "primary": "custom",
+      "sources": [
+        "https://www.preline.co/blocks/"
+      ],
+      "runtime": "none",
+      "customReplacement": {
+        "used": true,
+        "authorization": "owner-requested",
+        "reason": "The owner-selected evidence-led editorial system requires product-specific evidence ledgers, source receipts, and audit marks that no upstream block provides as one coherent system."
+      }
+    },
+    "contract": {
+      "purpose": "Make AI brand visibility explainable by keeping the answer, source context, competitor narrative, and next action together.",
+      "purposeSource": "PRD.md — Purpose and audience",
+      "canonicalPurpose": "Help founders and marketing teams understand where their brand is discussed, how it compares with competitors, and which evidence gaps deserve action.",
+      "purposeAlignment": "repository-override",
+      "driftNote": "Fleet catalog metadata still marks MentionPilot archived and inactive; the current repository PRD and implemented product workflow are authoritative for this review.",
+      "audience": "Product-aware founders and marketing leads who distrust vanity metrics and need the answer behind the score.",
+      "job": "Run a brand check, inspect the exact evidence, identify a narrative gap, and turn it into defensible follow-up work.",
+      "thesis": "AI visibility is useful only when the answer behind it remains inspectable.",
+      "system": "A warm editorial signal room built from paper fields, black rules, coral audit marks, evidence sheets, and a single dark closing register.",
+      "signature": "The evidence ledger links every result to its question, response excerpt, source receipt, coverage state, and next action.",
+      "risk": "Editorial styling could become decorative or obscure coverage limits; explicit illustrative labels, accessible contrast, and retained error states keep the interface honest."
+    }
+  },
+  "evidence": {
+    "screenshots": [
+      {
+        "width": 390,
+        "path": "artifacts/design/after-390.png"
+      },
+      {
+        "width": 768,
+        "path": "artifacts/design/after-768.png"
+      },
+      {
+        "width": 1440,
+        "path": "artifacts/design/after-1440.png"
+      }
+    ],
+    "projectCheck": {
+      "command": "cd apps/web && pnpm typecheck && pnpm build",
+      "status": "pass"
+    },
+    "critique": {
+      "score": 35,
+      "maximum": 40
+    },
+    "audit": {
+      "score": 19,
+      "maximum": 20
+    },
+    "unresolved": {
+      "p0": 0,
+      "p1": 0
+    },
+    "detector": {
+      "posture": "advisory",
+      "findings": []
+    },
+    "comprehension": {
+      "status": "pass",
+      "reviewer": "First-viewport comprehension review in Chrome at 390, 768, and 1440 pixels",
+      "answers": {
+        "product": "An evidence-first AI brand intelligence workspace that records how configured AI assistants describe a brand.",
+        "audience": "Founders and marketing teams responsible for a brand's market narrative.",
+        "value": "It replaces opaque visibility scores with inspectable answers and actionable source gaps.",
+        "mechanism": "Run discovery questions, retain responses, citations, and status, compare competitor positioning, and turn gaps into work.",
+        "proof": "The opening view demonstrates the record structure with a clearly labelled illustrative question, answer, source receipt, and check metadata.",
+        "nextAction": "Run a free brand check."
+      },
+      "purposeScore": {
+        "product": 25,
+        "audience": 15,
+        "value": 15,
+        "mechanism": 15,
+        "proof": 12,
+        "nextAction": 13,
+        "total": 95
+      },
+      "mismatches": []
+    }
+  },
+  "ownerFeedback": {
+    "decision": "keep",
+    "note": "The owner selected Signal Room, said they loved the direction, and requested a calmer top hero. The implementation retains the editorial evidence system while reducing the hero scale."
+  }
+}

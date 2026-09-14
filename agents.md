@@ -69,7 +69,7 @@ bash scripts/build-badge.sh
 - **AI provider config**: `FREE_AI_ENDPOINT_URL`, `FREE_AI_API_KEY`, `FREE_AI_MODEL` set in CF dashboard — never hardcoded.
 - **Badge widget**: self-contained Vite build, `dist/` is the publish artifact. Embeddable "mentioned by AI" badge for customers.
 - **Velite**: used in `apps/web` for MDX content processing (blog/docs).
-- `@saas-maker/ai` and `@saas-maker/ops` are consumed as published npm packages (no local file paths).
+- `@saas-maker/ops` is consumed as a published npm package. OpenAI-compatible transport and model discovery are repo-local so installs do not depend on an unavailable package.
 - Pre-push hook via Husky.
 
 ## Idea Backlog — LLM SEO extension (source: `~/Desktop/reference/saas-ideas/README.md` line 85)

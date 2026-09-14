@@ -14,17 +14,14 @@
     "lint": "echo 'lint: skipped (eslint-config-next compat broken with ESLint 10)'"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^2.0.41",
     "@mentionpilot/shared": "workspace:*",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
-    "@saas-maker/ai": "0.1.0",
     "@saas-maker/changelog-widget": "^0.2.1",
     "@saas-maker/feedback": "^0.2.1",
     "@saas-maker/posthog-client": "^0.1.0",
     "@saas-maker/testimonials": "^0.2.1",
-    "ai": "^6.0.168",
     "better-auth": "^1.6.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

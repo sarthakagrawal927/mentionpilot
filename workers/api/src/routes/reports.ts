@@ -39,7 +39,10 @@ reports.post('/:projectId/generate', async (c) => {
       latest_check: checks.length > 0 ? {
         ...checks[0],
         results: latestResults.map((r: any) => ({
+          prompt: r.prompt_text,
           platform: r.platform,
+          provider_status: r.provider_status,
+          error_message: r.error_message,
           brand_mentioned: !!r.brand_mentioned,
           brand_sentiment: r.brand_sentiment,
           brand_position: r.brand_position,

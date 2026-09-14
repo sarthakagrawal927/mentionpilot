@@ -21,6 +21,14 @@ interface SuggestedPrompt {
   reason: string;
 }
 
+const VISIBILITY_MAX: VisibilityScore["max"] = {
+  mention: 30,
+  sentiment: 20,
+  position: 20,
+  citation: 15,
+  reach: 15,
+};
+
 export default function DashboardPage() {
   const { projectId, loading: projectLoading } = useProject();
   const [loading, setLoading] = useState(true);
@@ -55,7 +63,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-10">
       <div>
         <h1 className="text-4xl font-black tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground font-medium mt-1">Real-time AI visibility and social signals.</p>
+        <p className="text-muted-foreground font-medium mt-1">AI visibility and source-backed brand signals.</p>
       </div>
 
       {error && (
@@ -76,17 +84,21 @@ export default function DashboardPage() {
                 <Badge variant="outline" className={`mt-4 border-current font-black ${gradeColor} bg-current/5 px-4 py-1`}>Grade: {score.grade}</Badge>
               </div>
               <div className="flex-1 w-full space-y-5">
-                {Object.entries(score.breakdown).map(([key, value]) => (
-                  <div key={key} className="space-y-1.5">
-                    <div className="flex justify-between items-end">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{key}</span>
-                      <span className="text-xs font-bold">{value}/{score.max[key as keyof typeof score.max]}</span>
+                {Object.entries(score.breakdown).map(([key, value]) => {
+                  const metric = key as keyof VisibilityScore["max"];
+                  const maximum = score.max?.[metric] ?? VISIBILITY_MAX[metric];
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{key}</span>
+                        <span className="text-xs font-bold">{value}/{maximum}</span>
+                      </div>
+                      <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden border border-border/10">
+                        <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.3)]" style={{ width: `${(value / maximum) * 100}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden border border-border/10">
-                      <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.3)]" style={{ width: `${(value / score.max[key as keyof typeof score.max]) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </CardContent>
@@ -98,7 +110,7 @@ export default function DashboardPage() {
         {[
           { href: "/dashboard/mentions", icon: Search, title: "Run AI Check", desc: "Check platform mentions", color: "text-primary", bg: "bg-primary/5" },
           { href: "/dashboard/geo", icon: FileCode, title: "GEO Score", desc: "Optimization check", color: "text-accent", bg: "bg-accent/5" },
-          { href: "/dashboard/social", icon: MessageSquare, title: "Social Monitor", desc: "Track HN & Reddit", color: "text-primary", bg: "bg-primary/5" }
+          { href: "/dashboard/social", icon: MessageSquare, title: "Signal Inbox", desc: "Review ranked evidence", color: "text-primary", bg: "bg-primary/5" }
         ].map((action, i) => (
           <Link key={i} href={action.href}>
             <Card className="hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all group cursor-pointer border-border/40 bg-card/50">

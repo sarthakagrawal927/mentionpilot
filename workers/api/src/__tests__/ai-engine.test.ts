@@ -1,5 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { analyzeResponse } from '../lib/ai-engine';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { analyzeResponse, detectAIPlatform, queryEndpoint, queryWorkersAi } from '../lib/ai-engine';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('detectAIPlatform', () => {
+  it('attributes direct provider endpoints and leaves aggregators custom', () => {
+    expect(detectAIPlatform('https://api.openai.com/v1/chat/completions')).toBe('openai');
+    expect(detectAIPlatform('https://api.perplexity.ai/chat/completions')).toBe('perplexity');
+    expect(detectAIPlatform('https://openrouter.ai/api/v1/chat/completions')).toBe('custom');
+  });
+});
 
 describe('analyzeResponse', () => {
   it('detects brand mention', () => {
@@ -83,5 +95,80 @@ describe('analyzeResponse', () => {
     expect(r.brand_sentiment).toBe(null);
     expect(r.brand_position).toBe(null);
     expect(r.citations).toEqual([]);
+  });
+});
+
+describe('queryEndpoint', () => {
+  it('uses the configured OpenAI-compatible endpoint and returns its response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      model: 'example-model',
+      choices: [{ message: { content: 'Example response' } }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await queryEndpoint({
+      endpointUrl: 'https://provider.example/v1/chat/completions',
+      apiKey: 'test-key',
+      model: 'example-model',
+    }, 'Example prompt');
+
+    expect(result.responseText).toBe('Example response');
+    expect(result.model).toBe('example-model');
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.redirect).toBe('manual');
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      model: 'example-model',
+      messages: [{ role: 'user', content: 'Example prompt' }],
+      max_tokens: 1024,
+      stream: false,
+    });
+  });
+
+  it('requests bounded JSON output for site interpretation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { content: '{"brand_name":"Example"}' } }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await queryEndpoint({
+      endpointUrl: 'https://provider.example/v1/chat/completions',
+      apiKey: 'test-key',
+      model: 'auto',
+    }, 'Interpret this site', { json: true, maxTokens: 800, projectId: 'mentionpilot' });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      max_tokens: 800,
+      project_id: 'mentionpilot',
+      response_format: { type: 'json_object' },
+    });
+  });
+
+  it('rejects endpoint redirects instead of following them', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, {
+      status: 302,
+      headers: { Location: 'https://unexpected.example' },
+    })));
+
+    await expect(queryEndpoint({
+      endpointUrl: 'https://provider.example/v1/chat/completions',
+      apiKey: 'test-key',
+      model: 'auto',
+    }, 'Example prompt')).rejects.toThrow('AI endpoint refused redirect (302)');
+  });
+});
+
+describe('queryWorkersAi', () => {
+  it('queries the bound model and normalizes its response', async () => {
+    const run = vi.fn().mockResolvedValue({ response: 'Cloudflare response' });
+    const result = await queryWorkersAi({ run } as unknown as Ai, 'Example prompt');
+
+    expect(result.responseText).toBe('Cloudflare response');
+    expect(result.model).toBe('@cf/meta/llama-3.1-8b-instruct-fast');
+    expect(run).toHaveBeenCalledWith('@cf/meta/llama-3.1-8b-instruct-fast', {
+      messages: [{ role: 'user', content: 'Example prompt' }],
+      max_tokens: 512,
+    });
   });
 });

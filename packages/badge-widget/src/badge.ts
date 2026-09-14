@@ -1,7 +1,7 @@
 import { lightTheme, darkTheme, getCSS, type Theme } from './styles';
 
 const API_BASE = 'https://mentionpilot-api.sarthakagrawal927.workers.dev';
-const SITE_URL = 'https://mentionpilot-web.vercel.app';
+const SITE_URL = 'https://mention.highsignal.app';
 
 const PLATFORM_LABELS: Record<string, string> = {
   openai: 'ChatGPT',

@@ -20,7 +20,7 @@ export default defineConfig({
           date: s.isodate(),
           author: s.string(),
           slug: s.slug("posts"),
-          content: s.mdx(),
+          content: s.markdown(),
         })
         .transform((data) => ({
           ...data,

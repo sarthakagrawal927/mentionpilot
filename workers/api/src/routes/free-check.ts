@@ -2,8 +2,13 @@ import { Hono } from 'hono';
 import type { Bindings, Variables } from '../types';
 import { getDb } from '../db';
 import { crawlSite, generatePrompts } from '../lib/site-crawler';
-import { queryEndpoint, analyzeResponse } from '../lib/ai-engine';
+import { queryEndpoint, queryWorkersAi, analyzeResponse } from '../lib/ai-engine';
 import type { AiEndpointConfig } from '../lib/ai-engine';
+import {
+  buildSiteIntelligencePrompt,
+  calculateReliableMentionRate,
+  parseSiteIntelligence,
+} from '../lib/free-check-intelligence';
 
 const freeCheck = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -24,15 +29,13 @@ freeCheck.post('/', async (c) => {
   }
 
   // Build endpoint config from env vars
-  const endpointUrl = (c.env as any).FREE_AI_ENDPOINT_URL as string | undefined;
-  const apiKey = (c.env as any).FREE_AI_API_KEY as string | undefined;
-  const model = (c.env as any).FREE_AI_MODEL as string | undefined;
+  const endpointUrl = c.env.FREE_AI_ENDPOINT_URL;
+  const apiKey = c.env.FREE_AI_API_KEY;
+  const model = c.env.FREE_AI_MODEL;
 
-  if (!endpointUrl || !apiKey || !model) {
-    return c.json({ error: 'Free check is temporarily unavailable' }, 503);
-  }
-
-  const endpointConfig: AiEndpointConfig = { endpointUrl, apiKey, model };
+  const endpointConfig: AiEndpointConfig | null = endpointUrl && apiKey && model
+    ? { endpointUrl, apiKey, model }
+    : null;
 
   // Crawl site
   let siteInfo;
@@ -42,36 +45,64 @@ freeCheck.post('/', async (c) => {
     return c.json({ error: `Could not fetch ${body.domain}: ${(err as Error).message}` }, 400);
   }
 
-  const prompts = generatePrompts(siteInfo);
+  let intelligence = parseSiteIntelligence('', siteInfo);
+  try {
+    const prompt = buildSiteIntelligencePrompt(siteInfo);
+    const response = endpointConfig
+      ? await queryEndpoint(endpointConfig, prompt, {
+        json: true,
+        maxTokens: 800,
+        projectId: 'mentionpilot',
+      })
+      : await queryWorkersAi(c.env.AI, prompt);
+    intelligence = parseSiteIntelligence(response.responseText, siteInfo);
+  } catch (error) {
+    // Deterministic, unbranded prompts remain available when interpretation fails.
+    console.warn(JSON.stringify({
+      event: 'free_check_interpretation_failed',
+      request_id: c.get('requestId'),
+      message: error instanceof Error ? error.message.slice(0, 240) : 'Unknown error',
+    }));
+    intelligence = parseSiteIntelligence('', siteInfo);
+  }
+
+  siteInfo = {
+    ...siteInfo,
+    brand_name: intelligence.brandName,
+    brand_aliases: intelligence.brandAliases,
+    category: intelligence.category,
+  };
+  const prompts = intelligence.prompts.length === 5
+    ? intelligence.prompts
+    : generatePrompts(siteInfo);
   const checkId = crypto.randomUUID();
 
-  const check = await db.createFreeCheck({
+  await db.createFreeCheck({
     id: checkId,
     domain: body.domain,
     brand_name: siteInfo.brand_name,
     ip_address: ip,
   });
 
-  // Run check in background
-  c.executionCtx.waitUntil((async () => {
-    const results: any[] = [];
-    let mentions = 0;
-    let total = 0;
-
-    for (const promptText of prompts) {
+  // Keep the request open until inference is persisted. A detached waitUntil batch
+  // can outlive the Worker background window and leave a check stuck as running.
+  try {
+    const settledResults = await Promise.all(prompts.map(async (promptText) => {
       try {
-        const response = await queryEndpoint(endpointConfig, promptText);
+        const response = endpointConfig
+          ? await queryEndpoint(endpointConfig, promptText, { projectId: 'mentionpilot' })
+          : await queryWorkersAi(c.env.AI, promptText);
         const analysis = analyzeResponse(
           response.responseText,
           siteInfo.brand_name,
-          [],
+          siteInfo.brand_aliases ?? [],
           body.domain,
           []
         );
 
-        results.push({
+        return {
           prompt: promptText,
-          platform: 'custom',
+          platform: endpointConfig ? 'free-ai' : 'workers-ai',
           model: response.model,
           brand_mentioned: analysis.brand_mentioned,
           brand_sentiment: analysis.brand_sentiment,
@@ -79,30 +110,38 @@ freeCheck.post('/', async (c) => {
           brand_cited: analysis.brand_cited,
           response_preview: response.responseText.slice(0, 500),
           latency_ms: response.latencyMs,
-        });
-
-        if (analysis.brand_mentioned) mentions++;
-        total++;
-      } catch {
-        total++;
+        };
+      } catch (error) {
+        console.warn(JSON.stringify({
+          event: 'free_check_query_failed',
+          check_id: checkId,
+          request_id: c.get('requestId'),
+          message: error instanceof Error ? error.message.slice(0, 240) : 'Unknown error',
+        }));
+        return null;
       }
-    }
+    }));
 
-    const mentionRate = total > 0 ? mentions / total : 0;
+    const results = settledResults.filter((result) => result !== null);
+    const mentionRate = calculateReliableMentionRate(results, Math.min(3, prompts.length));
+    const hasEnoughEvidence = mentionRate !== null;
+    const status = hasEnoughEvidence ? 'completed' : 'failed';
     await db.updateFreeCheck(checkId, {
-      status: 'completed',
+      status,
       mention_rate: mentionRate,
       results: JSON.stringify(results),
       completed_at: new Date().toISOString(),
     });
-  })().catch(err => {
-    db.updateFreeCheck(checkId, {
+
+    return c.json({ id: checkId, brand_name: siteInfo.brand_name, prompts, status }, 201);
+  } catch {
+    await db.updateFreeCheck(checkId, {
       status: 'failed',
       completed_at: new Date().toISOString(),
     }).catch(() => {});
-  }));
 
-  return c.json({ id: checkId, brand_name: siteInfo.brand_name, prompts, status: 'running' }, 201);
+    return c.json({ error: 'Free check failed', id: checkId }, 502);
+  }
 });
 
 // GET /:id — poll for results
@@ -114,6 +153,9 @@ freeCheck.get('/:id', async (c) => {
   return c.json({
     ...check,
     results: JSON.parse(check.results || '[]'),
+    error: check.status === 'failed'
+      ? 'The AI provider did not return enough responses for a reliable score.'
+      : undefined,
   });
 });
 
