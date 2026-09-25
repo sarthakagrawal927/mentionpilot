@@ -321,6 +321,8 @@ export default function Home() {
           <Link href="/login">Sign in</Link>
         </div>
       </footer>
+      <script src="https://sassmaker.com/project-strip.js" data-project="mentionpilot" defer />
+      <script src="https://sassmaker.com/ai-chat-footer.js" data-name="MentionPilot" defer />
     </div>
   );
 }
