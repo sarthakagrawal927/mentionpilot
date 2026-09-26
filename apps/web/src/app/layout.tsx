@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -48,6 +49,9 @@ export default function RootLayout({
             <SaaSMakerFeedback />
           </AnalyticsProvider>
         </ThemeProvider>
+        <Script id="microsoft-clarity" strategy="lazyOnload">
+          {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/yoigmcwti8";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","yoigmcwti8");window.clarity("set","project_id","mentionpilot");`}
+        </Script>
       </body>
     </html>
   );
