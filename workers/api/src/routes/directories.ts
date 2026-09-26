@@ -105,36 +105,38 @@ directories.get('/:projectId/domain-rating', async (c) => {
   if (!apiKey) return c.json({ error: 'OpenPageRank API key not configured' }, 500);
 
   try {
-    const res = await fetch(
-      `https://openpagerank.com/api/v1.0/getPageRank?domains[]=${encodeURIComponent(domain)}`,
-      { headers: { 'API-OPR': apiKey } }
-    );
+    const res = await fetch('https://openpagerank.keywordseverywhere.com/v1/domains/bulk', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ domains: [domain], include_history: false }),
+    });
 
     if (!res.ok) {
       return c.json({ error: 'OpenPageRank API error', status: res.status }, 502);
     }
 
     const data = await res.json() as {
-      status_code: number;
-      response: Array<{
-        status_code: number;
-        page_rank_integer: number;
-        page_rank_decimal: number;
-        rank: string;
+      results: Array<{
         domain: string;
+        found: boolean;
+        open_page_rank: number | null;
+        rank: number | null;
       }>;
     };
 
-    const entry = data.response?.[0];
-    if (!entry || entry.status_code !== 200) {
-      return c.json({ domain, page_rank: null, rank: null, error: 'Domain not found' });
+    const entry = data.results?.[0];
+    if (!entry?.found || entry.open_page_rank === null) {
+      return c.json({ domain, page_rank: null, page_rank_decimal: null, rank: null, error: 'Domain not found' });
     }
 
     return c.json({
       domain: entry.domain,
-      page_rank: entry.page_rank_integer,
-      page_rank_decimal: entry.page_rank_decimal,
-      rank: entry.rank,
+      page_rank: Math.floor(entry.open_page_rank),
+      page_rank_decimal: entry.open_page_rank,
+      rank: entry.rank === null ? null : String(entry.rank),
     });
   } catch (err) {
     return c.json({ error: 'Failed to fetch domain rating' }, 500);
