@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mention.highsignal.app"),
   title: "MentionPilot",
   description: "AI Visibility Monitoring for Startups",
 };

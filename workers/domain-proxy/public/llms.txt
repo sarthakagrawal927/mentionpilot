@@ -1,0 +1,12 @@
+# MentionPilot
+
+> AI Visibility Monitoring for Startups.
+
+Site: https://mention.highsignal.app
+
+## What it is
+
+MentionPilot monitors how AI assistants and answer engines talk about a
+product — tracking mentions, sentiment, and visibility over time.
+
+Maintained by Sarthak Agrawal: https://sarthakagrawal.dev

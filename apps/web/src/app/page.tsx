@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "MentionPilot — See how AI describes your brand",
   description:
     "Inspect the prompts, answers, citations, and competitive context behind your brand's visibility in AI assistants.",
+  alternates: { canonical: "/" },
 };
 
 const retainedEvidence = [
