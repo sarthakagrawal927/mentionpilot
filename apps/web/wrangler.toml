@@ -26,4 +26,4 @@ BETTER_AUTH_URL = "https://mention.highsignal.app"
 [[d1_databases]]
 binding = "AUTH_DB"
 database_name = "mentionpilot-db"
-database_id = "58f25b8f-ebe2-4117-8afc-ede08ec37430"
+database_id = "50564400-a892-48b5-a2f9-1357fa409e0a"
